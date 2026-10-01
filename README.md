@@ -1,19 +1,21 @@
 # ROOV
 
 Plataforma de descoberta de experiências. Repositório único com o frontend
-web e a API, cada um independente.
+web, o app mobile e a API, cada um independente.
 
 ```
 roov/
 ├── web/              Frontend React + Vite
+├── mobile/           App iOS + Android (React Native / Expo)
 ├── api/              API NestJS + Prisma + PostgreSQL
 └── docs/             Documentação de produto e decisões técnicas
 ```
 
 Não é mais um monorepo com workspace (ver `docs/EMENDA-003-REPO-UNICO-SEM-WORKSPACE.md`):
-`web/` e `api/` são duas pastas irmãs, cada uma com seu próprio `package.json`
-e `package-lock.json`, sem nenhuma ferramenta linkando uma na outra. Rodar
-qualquer uma delas é só entrar na pasta e usar `npm` normalmente.
+`web/`, `mobile/` e `api/` são pastas irmãs, cada uma com seu próprio
+`package.json` e `package-lock.json`, sem nenhuma ferramenta linkando uma
+na outra. Rodar qualquer uma delas é só entrar na pasta e usar `npm`
+normalmente.
 
 ## Requisitos
 
