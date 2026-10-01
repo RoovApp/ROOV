@@ -1,5 +1,5 @@
 /**
- * Autenticação real — fala com `apps/api`, nunca com o mock.
+ * Autenticação real — fala com `api/`, nunca com o mock.
  *
  * Deliberadamente separado de `services/index.js`: o resto do app (lugares,
  * feed, perfil com XP) continua 100% mock por enquanto. Só o portão de

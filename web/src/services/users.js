@@ -1,5 +1,5 @@
 /**
- * Edição de informações do perfil — fala com `apps/api`, não com o mock.
+ * Edição de informações do perfil — fala com `api/`, não com o mock.
  * Mesmo padrão de `services/auth.js`.
  */
 

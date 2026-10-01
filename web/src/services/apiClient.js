@@ -1,5 +1,5 @@
 /**
- * Cliente HTTP para a API real (`apps/api`).
+ * Cliente HTTP para a API real (`api/`).
  *
  * Único ponto de contato com o backend — igual `services/index.js` é o único
  * ponto de contato com os dados mock. Nenhum outro arquivo deve chamar
