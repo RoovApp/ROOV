@@ -76,6 +76,11 @@ vale mais que concisão em projeto de anos.
 
 ### D2 — Monorepo com pacote `core` compartilhado
 
+> **Adiada pela EMENDA-003.** O raciocínio abaixo continua válido — ele só se
+> aplica quando o backend precisar de verdade do motor de recomendação, não
+> antes. Até lá, `packages/core` ficou vazio demais tempo pra justificar o
+> workspace que existia só pra protegê-lo. Ver `EMENDA-003-REPO-UNICO-SEM-WORKSPACE.md`.
+
 Esta é **a decisão mais importante deste documento.**
 
 **O problema.** O `engine/` do frontend (DNA, pesos, recomendação, momento,

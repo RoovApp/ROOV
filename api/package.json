@@ -1,5 +1,5 @@
 {
-  "name": "@roov/api",
+  "name": "roov-api",
   "version": "0.1.0",
   "private": true,
   "description": "API do ROOV — NestJS + Prisma + PostgreSQL.",
@@ -24,7 +24,6 @@
     "@nestjs/platform-express": "^11.0.0",
     "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^6.2.0",
-    "@roov/core": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "helmet": "^8.0.0",

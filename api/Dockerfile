@@ -5,36 +5,31 @@
 # VPS. É o que garante que usar plano gratuito hoje não vire bloqueio amanhã —
 # trocar de hospedagem passa a ser uma tarde de trabalho, não uma migração.
 #
-# Build a partir da RAIZ do monorepo:
-#   docker build -f apps/api/Dockerfile -t roov-api .
+# Build a partir desta pasta (api/), não da raiz do repo — não é mais um
+# monorepo com workspace:
+#   docker build -t roov-api .
 
 # ─── Estágio 1: dependências ──────────────────────────────────────────────────
 FROM node:22-alpine AS deps
-RUN corepack enable
-WORKDIR /repo
+WORKDIR /app
 
-# Só os manifestos primeiro: o cache de camada do Docker sobrevive a mudanças
-# de código-fonte, e `pnpm install` deixa de rodar a cada commit.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/core/package.json ./packages/core/
-COPY apps/api/package.json ./apps/api/
-
-RUN pnpm install --frozen-lockfile
+# Só o manifesto primeiro: o cache de camada do Docker sobrevive a mudanças de
+# código-fonte, e `npm ci` deixa de rodar a cada commit.
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # ─── Estágio 2: build ─────────────────────────────────────────────────────────
 FROM deps AS build
-WORKDIR /repo
+WORKDIR /app
 COPY . .
 
-RUN pnpm --filter @roov/core build \
- && pnpm --filter @roov/api exec prisma generate \
- && pnpm --filter @roov/api build \
- && pnpm prune --prod
+RUN npx prisma generate \
+ && npm run build \
+ && npm prune --omit=dev
 
 # ─── Estágio 3: runtime ───────────────────────────────────────────────────────
 FROM node:22-alpine AS runtime
-RUN corepack enable
-WORKDIR /repo
+WORKDIR /app
 
 ENV NODE_ENV=production
 
@@ -42,15 +37,11 @@ ENV NODE_ENV=production
 # uma falha de execução remota em comprometimento do host.
 USER node
 
-COPY --from=build --chown=node:node /repo/node_modules ./node_modules
-COPY --from=build --chown=node:node /repo/packages/core/dist ./packages/core/dist
-COPY --from=build --chown=node:node /repo/packages/core/package.json ./packages/core/
-COPY --from=build --chown=node:node /repo/apps/api/node_modules ./apps/api/node_modules
-COPY --from=build --chown=node:node /repo/apps/api/dist ./apps/api/dist
-COPY --from=build --chown=node:node /repo/apps/api/prisma ./apps/api/prisma
-COPY --from=build --chown=node:node /repo/apps/api/package.json ./apps/api/
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=build --chown=node:node /app/dist ./dist
+COPY --from=build --chown=node:node /app/prisma ./prisma
+COPY --from=build --chown=node:node /app/package.json ./
 
-WORKDIR /repo/apps/api
 EXPOSE 3000
 
 # Migrations rodam no start, não no build: no build não existe banco acessível.

@@ -1,64 +1,59 @@
 # ROOV
 
-Plataforma de descoberta de experiências. Monorepo com o frontend web, a API e
-o pacote compartilhado de domínio e motores.
+Plataforma de descoberta de experiências. Repositório único com o frontend
+web e a API, cada um independente.
 
 ```
 roov/
-├── apps/
-│   ├── web/          Frontend React + Vite (existente, inalterado)
-│   └── api/          API NestJS + Prisma + PostgreSQL
-└── packages/
-    └── core/         Domínio e motores — implementação única, dois consumidores
+├── web/              Frontend React + Vite
+├── api/              API NestJS + Prisma + PostgreSQL
+└── docs/             Documentação de produto e decisões técnicas
 ```
 
-## Por que monorepo
-
-O `engine/` é o produto: DNA, pesos e recomendação. Nas Fases 6 e 7 ele precisa
-rodar no servidor. Sem um pacote compartilhado, existiriam duas implementações
-do mesmo algoritmo divergindo em silêncio — o tipo de defeito que não gera erro,
-só recomendação ruim.
-
-`packages/core` é a implementação única. Ele é puro: sem framework, sem I/O, sem
-DOM. Escrito em TypeScript e publicado como JavaScript com `.d.ts`, de modo que
-o frontend continua em JavaScript e ainda ganha autocomplete.
+Não é mais um monorepo com workspace (ver `docs/EMENDA-003-REPO-UNICO-SEM-WORKSPACE.md`):
+`web/` e `api/` são duas pastas irmãs, cada uma com seu próprio `package.json`
+e `package-lock.json`, sem nenhuma ferramenta linkando uma na outra. Rodar
+qualquer uma delas é só entrar na pasta e usar `npm` normalmente.
 
 ## Requisitos
 
 - Node.js 22+
-- pnpm 9+ (`corepack enable`)
-- Docker
+- Uma URL de Postgres com a extensão PostGIS habilitada (gerenciado — Supabase
+  ou Neon — ou local, se você tiver Docker)
 
 ## Primeira execução
 
 ```bash
-corepack enable
-pnpm install
+# Frontend
+cd web
+npm install
+npm run dev                       # http://localhost:5173
 
-cd apps/api
-docker compose up -d              # Postgres com PostGIS
-cp .env.example .env
+# API (outro terminal)
+cd api
+npm install
+cp .env.example .env              # preencha DATABASE_URL e DIRECT_URL
 openssl rand -base64 48           # cole o resultado em JWT_SECRET
-pnpm db:migrate                   # aplica as migrations
-cd ../..
-
-pnpm dev:api                      # http://localhost:3000/v1/health
-pnpm dev:web                      # http://localhost:5173
+npm run db:migrate                # aplica as migrations
+npm run dev                       # http://localhost:3000/v1/health
 ```
-
-Nenhum serviço externo é necessário para desenvolver. A autenticação é nossa e
-o banco roda em container.
 
 ## Comandos
 
+Dentro de `web/` ou `api/`:
+
 | Comando | O que faz |
 | --- | --- |
-| `pnpm dev:api` | API em modo watch |
-| `pnpm dev:web` | Frontend em modo watch |
-| `pnpm test` | Testes de todos os pacotes |
-| `pnpm build` | Build de todos os pacotes |
-| `pnpm db:migrate` | Cria e aplica migration em desenvolvimento |
-| `pnpm db:studio` | Interface visual do banco |
+| `npm run dev` | Modo watch |
+| `npm run build` | Build de produção |
+| `npm test` | Testes (só existe em `api/` por enquanto) |
+
+Só em `api/`:
+
+| Comando | O que faz |
+| --- | --- |
+| `npm run db:migrate` | Cria e aplica migration em desenvolvimento |
+| `npm run db:studio` | Interface visual do banco |
 
 ## Rotas
 
@@ -132,21 +127,23 @@ interpretado nem construído no frontend.
 Regras que valem para toda a evolução do projeto. Quebrar qualquer uma delas
 exige decisão registrada em documento, não commit.
 
-1. **`packages/core` é puro.** Sem Nest, sem Prisma, sem React, sem rede, sem
-   disco. Tempo entra por parâmetro, nunca por `Date.now()` interno — motor que
-   lê o relógio sozinho não é testável de forma determinística.
-2. **Só repositórios tocam o Prisma.** Controllers e services nunca importam
+1. **Só repositórios tocam o Prisma.** Controllers e services nunca importam
    `PrismaService`.
-3. **Nenhum provedor externo participa da autenticação.** Identidade é nossa:
+2. **Nenhum provedor externo participa da autenticação.** Identidade é nossa:
    nossa tabela, nosso hash, nosso token. Serviços externos entram só onde
-   agregam valor claro, como Storage.
-4. **Rota nasce protegida.** O guard é global; abrir exige `@Public()`
+   agregam valor claro, como Storage ou hospedagem do próprio Postgres.
+3. **Rota nasce protegida.** O guard é global; abrir exige `@Public()`
    explícito. Esquecer o decorator devolve 401 — falha fechada, não aberta.
-5. **Senha nunca sai da camada de auth.** Nem em resposta, nem em log, nem em
+4. **Senha nunca sai da camada de auth.** Nem em resposta, nem em log, nem em
    mensagem de erro. A projeção pública do usuário é uma lista explícita de
    campos, para que um campo sensível novo fique de fora por padrão.
-6. **Todo erro sai como `AppException`.** Nunca `HttpException` crua, nunca
+5. **Todo erro sai como `AppException`.** Nunca `HttpException` crua, nunca
    `throw new Error` numa rota.
+6. **O motor de recomendação (`web/src/engine/`) continua com uma única
+   implementação.** Hoje só existe no frontend. Quando a API precisar da
+   mesma lógica (Fase 6/7), a decisão de como compartilhar — pacote
+   publicado, cópia com teste de regressão cruzado, ou reabrir workspace —
+   precisa ser tomada então, registrada em emenda, não resolvida calada.
 
 ## Documentos
 
@@ -156,3 +153,6 @@ exige decisão registrada em documento, não commit.
 - `docs/FASE-1-DECISOES-TECNICAS.md` — decisões técnicas do backend
 - `docs/EMENDA-001-AUTENTICACAO-E-CUSTOS.md` — custos e hospedagem
 - `docs/EMENDA-002-AUTENTICACAO-PROPRIA.md` — reversão para autenticação própria
+- `docs/EMENDA-003-REPO-UNICO-SEM-WORKSPACE.md` — saída do monorepo pnpm
+- `docs/PRODUTO.md` — visão de MVP, status atual e próximos passos (pra
+  apresentar fora do time técnico)
