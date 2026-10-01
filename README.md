@@ -18,8 +18,8 @@ qualquer uma delas é só entrar na pasta e usar `npm` normalmente.
 ## Requisitos
 
 - Node.js 22+
-- Uma URL de Postgres com a extensão PostGIS habilitada (gerenciado — Supabase
-  ou Neon — ou local, se você tiver Docker)
+- Uma URL de Postgres com a extensão PostGIS habilitada (gerenciado, Supabase
+  ou Neon, ou local, se você tiver Docker)
 
 ## Primeira execução
 
@@ -70,7 +70,7 @@ como públicas são exceções explícitas via `@Public()`.
 | `GET` | `/auth/me` | **não** | Perfil do usuário autenticado |
 
 Rotas de sessão são públicas porque são chamadas justamente quando não há
-access token válido — exigir um aqui tornaria login e renovação impossíveis.
+access token válido: exigir um aqui tornaria login e renovação impossíveis.
 
 **Sessão devolvida por register, login e refresh:**
 
@@ -83,7 +83,7 @@ access token válido — exigir um aqui tornaria login e renovação impossívei
 ```
 
 O access token vale 15 minutos e não é revogável. O refresh token vale 30 dias,
-fica no banco (como hash) e é revogável — é ele que faz o logout ter efeito real.
+fica no banco (como hash) e é revogável: é ele que faz o logout ter efeito real.
 
 ## Contrato da API
 
@@ -111,7 +111,7 @@ Todas as rotas ficam sob `/v1`.
 }
 ```
 
-`code` é estável e legível por máquina — decisões do cliente se baseiam nele.
+`code` é estável e legível por máquina: decisões do cliente se baseiam nele.
 `message` é para humanos e pode mudar a qualquer momento, inclusive de idioma.
 Nenhum cliente deve comparar `message`.
 
@@ -133,7 +133,7 @@ exige decisão registrada em documento, não commit.
    nossa tabela, nosso hash, nosso token. Serviços externos entram só onde
    agregam valor claro, como Storage ou hospedagem do próprio Postgres.
 3. **Rota nasce protegida.** O guard é global; abrir exige `@Public()`
-   explícito. Esquecer o decorator devolve 401 — falha fechada, não aberta.
+   explícito. Esquecer o decorator devolve 401: falha fechada, não aberta.
 4. **Senha nunca sai da camada de auth.** Nem em resposta, nem em log, nem em
    mensagem de erro. A projeção pública do usuário é uma lista explícita de
    campos, para que um campo sensível novo fique de fora por padrão.
@@ -141,18 +141,18 @@ exige decisão registrada em documento, não commit.
    `throw new Error` numa rota.
 6. **O motor de recomendação (`web/src/engine/`) continua com uma única
    implementação.** Hoje só existe no frontend. Quando a API precisar da
-   mesma lógica (Fase 6/7), a decisão de como compartilhar — pacote
-   publicado, cópia com teste de regressão cruzado, ou reabrir workspace —
+   mesma lógica (Fase 6/7), a decisão de como compartilhar (pacote
+   publicado, cópia com teste de regressão cruzado, ou reabrir workspace)
    precisa ser tomada então, registrada em emenda, não resolvida calada.
 
 ## Documentos
 
-- `docs/VISION.md` — identidade do produto
-- `docs/ARCHITECTURE.md` — arquitetura do frontend
-- `docs/ROADMAP.md` — ordem oficial de desenvolvimento
-- `docs/FASE-1-DECISOES-TECNICAS.md` — decisões técnicas do backend
-- `docs/EMENDA-001-AUTENTICACAO-E-CUSTOS.md` — custos e hospedagem
-- `docs/EMENDA-002-AUTENTICACAO-PROPRIA.md` — reversão para autenticação própria
-- `docs/EMENDA-003-REPO-UNICO-SEM-WORKSPACE.md` — saída do monorepo pnpm
-- `docs/PRODUTO.md` — visão de MVP, status atual e próximos passos (pra
+- `docs/VISION.md`: identidade do produto
+- `docs/ARCHITECTURE.md`: arquitetura do frontend
+- `docs/ROADMAP.md`: ordem oficial de desenvolvimento
+- `docs/FASE-1-DECISOES-TECNICAS.md`: decisões técnicas do backend
+- `docs/EMENDA-001-AUTENTICACAO-E-CUSTOS.md`: custos e hospedagem
+- `docs/EMENDA-002-AUTENTICACAO-PROPRIA.md`: reversão para autenticação própria
+- `docs/EMENDA-003-REPO-UNICO-SEM-WORKSPACE.md`: saída do monorepo pnpm
+- `docs/PRODUTO.md`: visão de MVP, status atual e próximos passos (pra
   apresentar fora do time técnico)

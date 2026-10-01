@@ -1,12 +1,12 @@
-# ROOV — Documento de Produto
+# ROOV: Documento de Produto
 
 **Data:** 01/out/2026
 **Status:** rascunho para validar entre os sócios antes de travar o plano do mês.
 
 Este documento tem 5 partes: o que entra no MVP, o que já está pronto, o que
 ainda falta (com os próximos passos concretos), pontos estratégicos a
-validar, e uma parte técnica — essa última só interessa a quem vai colocar
-a mão no código.
+validar, e uma parte técnica (essa última só interessa a quem vai colocar a
+mão no código).
 
 ---
 
@@ -15,7 +15,7 @@ a mão no código.
 O `docs/ROADMAP.md` já define um MVP1 com 7 módulos (Mapa, Feed, Explorar,
 Comunidades, Salvos, Perfil, Agenda) e DNA integrado em todos eles. Esse
 continua sendo o destino. A proposta abaixo é um **corte menor**, pensado pra
-caber num mês dado o estado real do backend hoje (seção 2) — não uma
+caber num mês dado o estado real do backend hoje (seção 2): não uma
 substituição do MVP1, um primeiro degrau até ele.
 
 **Entra no corte deste mês:**
@@ -26,21 +26,21 @@ substituição do MVP1, um primeiro degrau até ele.
 | Perfil | Ver e editar dados básicos, preferências de categoria |
 | Lugares | Base real de lugares (categoria, localização, horário) |
 | Mapa + Explorar | Navegação pelos lugares reais, com o motor de recomendação (DNA, contexto, pesos) decidindo o que aparece e em que ordem |
-| Salvos | Marcar um lugar como "quero ir" ou "já fui" — sem calendário ainda |
+| Salvos | Marcar um lugar como "quero ir" ou "já fui", sem calendário ainda |
 
 **Fica para depois do MVP (melhoria):**
 
 | Módulo | Por quê fica de fora agora |
 | --- | --- |
-| Feed social | Precisa de posts, fotos, curtidas e comentários — nenhuma linha de backend existe ainda (Fase 5 completa) |
-| Comunidades | Precisa de criação, participação e moderação — mesma situação, Fase 8 completa |
-| Agenda avançada | Calendário, eventos e lembretes — Salvos simples entra no corte, isso não |
+| Feed social | Precisa de posts, fotos, curtidas e comentários. Nenhuma linha de backend existe ainda (Fase 5 completa) |
+| Comunidades | Precisa de criação, participação e moderação. Mesma situação, Fase 8 completa |
+| Agenda avançada | Calendário, eventos e lembretes. Salvos simples entra no corte, isso não |
 | Pesquisa global | Fase 10, não iniciada |
 | Integrações (fotos reais, clima real, mapa de verdade, geolocalização) | Fase 11, depende de decisão de fornecedor (Storage) |
-| DNA rodando no servidor | O motor já existe e funciona — só que hoje roda no navegador. Levá-lo pro servidor (pra múltiplos clientes consultarem o mesmo cálculo) é trabalho de Fase 6/7 que ainda não começou |
+| DNA rodando no servidor | O motor já existe e funciona, só que hoje roda no navegador. Levá-lo pro servidor (pra múltiplos clientes consultarem o mesmo cálculo) é trabalho de Fase 6/7 que ainda não começou |
 
 A pergunta que separa um item de outro é sempre a mesma: **dá pra demonstrar a
-proposta central do ROOV — "o que vale a pena viver, agora" — sem esse
+proposta central do ROOV ("o que vale a pena viver, agora") sem esse
 módulo?** Mapa, Explorar e Salvos com recomendação de verdade já contam essa
 história sozinhos. Feed e Comunidades contam uma história diferente (rede
 social), que vale construir em seguida, não ao mesmo tempo.
@@ -49,20 +49,20 @@ social), que vale construir em seguida, não ao mesmo tempo.
 
 ## 2. O que já temos
 
-Avaliação honesta do que existe **de verdade, rodando e testado** — não do
+Avaliação honesta do que existe **de verdade, rodando e testado**, não do
 que está desenhado na tela.
 
 | Área | Status | Nota |
 | --- | --- | --- |
 | Autenticação | 🟢 Vivido | Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. 20 testes automatizados passando |
 | Lugares (backend) | 🟡 Quero viver | CRUD existe (criar, atualizar, consultar, categorias, horário), mas ainda não confirmado se cobre tudo que o front vai precisar |
-| Motor de recomendação (DNA, pesos, contexto, agenda) | 🟡 Quero viver | Existe, funciona, e é sofisticado — só que roda inteiro no navegador, sobre 20 lugares de mentira. Nunca viu um dado real |
+| Motor de recomendação (DNA, pesos, contexto, agenda) | 🟡 Quero viver | Existe, funciona, e é sofisticado, só que roda inteiro no navegador, sobre 20 lugares de mentira. Nunca viu um dado real |
 | Mapa / Explorar (frontend) | 🟡 Quero viver | Telas prontas, só faltam ligar no dado real |
 | Perfil (frontend + backend) | 🟡 Quero viver | Login/logout funcionam de verdade; editar perfil, avatar e preferências ainda não têm backend |
 | Feed, Comunidades, Agenda avançada | ⚪ Ainda não | Telas existem (bonitas, navegáveis), mas 100% sobre dado inventado. Nenhuma dessas três tem uma linha de backend |
 | Infraestrutura | 🟢 Vivido | Estrutura do projeto organizada, testes automatizados no backend, hospedagem decidida (Postgres gerenciado, sem Docker) |
 
-**O que isso significa na prática:** o ROOV hoje é dois produtos colados — um
+**O que isso significa na prática:** o ROOV hoje é dois produtos colados, um
 aplicativo de verdade (autenticação) e uma demo muito bem feita (todo o
 resto). A ponte entre os dois já está desenhada (os `services/` do frontend
 já separam "fala com a API real" de "fala com o mock"), só falta construir o
@@ -72,30 +72,30 @@ outro lado da ponte pro resto dos módulos.
 
 ## 3. O que ainda falta e próximos passos
 
-Em ordem — cada passo depende do anterior.
+Em ordem: cada passo depende do anterior.
 
 1. **Banco de dados em produção.** Decidido: Postgres gerenciado (Supabase,
-   só como hospedagem — não para login, essa decisão já foi tomada e
+   só como hospedagem, não para login, essa decisão já foi tomada e
    revertida uma vez, ver `docs/EMENDA-002-AUTENTICACAO-PROPRIA.md`). Falta
    criar a conta, o projeto, ativar a extensão PostGIS e passar a connection
    string. *Responsável: Gabriel.*
 2. **Ligar Mapa e Explorar no dado real.** Trocar `services/mock/places.js`
-   pela chamada de verdade em `api/`, sem mudar o motor de recomendação —
-   ele já está pronto, só precisa parar de receber dado inventado.
-3. **Completar Perfil.** Editar nome/bio/avatar, preferências de categoria —
-   fecha a Fase 3 do roadmap.
-4. **Salvos simples.** Marcar lugar como "quero ir"/"já fui" — a versão sem
+   pela chamada de verdade em `api/`, sem mudar o motor de recomendação: ele
+   já está pronto, só precisa parar de receber dado inventado.
+3. **Completar Perfil.** Editar nome/bio/avatar, preferências de categoria.
+   Fecha a Fase 3 do roadmap.
+4. **Salvos simples.** Marcar lugar como "quero ir"/"já fui": a versão sem
    calendário da Fase 9.
 5. **Validar com dado real.** Com os 20 lugares de mock trocados por lugares
    de verdade (cadastrados à mão ou importados), testar se a recomendação
-   continua fazendo sentido — é o primeiro teste de verdade do motor de DNA.
+   continua fazendo sentido: é o primeiro teste de verdade do motor de DNA.
 6. **Decisão de hospedagem da API e do front**, depois do MVP rodando local
-   (Render/Fly/Railway para a API — o `Dockerfile` já existe pronto pra
+   (Render/Fly/Railway para a API, o `Dockerfile` já existe pronto pra
    qualquer uma; Vercel/Netlify para o front).
 
 Depois desses 6 passos, o corte do MVP (seção 1) está de pé. A partir daí, a
 ordem de construção do que "fica como melhoria" volta a seguir o
-`docs/ROADMAP.md` na ordem em que está — Feed antes de Comunidades, DNA no
+`docs/ROADMAP.md` na ordem em que está: Feed antes de Comunidades, DNA no
 servidor quando o segundo cliente (ex: app mobile) precisar dele de verdade.
 
 ---
@@ -104,12 +104,12 @@ servidor quando o segundo cliente (ex: app mobile) precisar dele de verdade.
 
 **Direção estratégica: confirmada, não precisa mudar.** Vale reforçar o que
 já está decidido antes de construir mais features: o ROOV tem um eixo
-central claro — `docs/VISION.md` é explícito: descoberta de experiências é
-o eixo primário, comunidade sustenta a confiança na recomendação, não é o
-ponto de partida. Nada muda aqui, só vale manter a disciplina de checar
+central claro, descrito em `docs/VISION.md` (descoberta de experiências é o
+eixo primário, comunidade sustenta a confiança na recomendação, não é o
+ponto de partida). Nada muda aqui, só vale manter a disciplina de checar
 isso a cada feature nova.
 
-**Pertencimento (Comunidades) depois, não antes — já é a decisão tomada.**
+**Pertencimento (Comunidades) depois, não antes: já é a decisão tomada.**
 Entender o usuário de verdade (localização, persona, comportamento) antes
 de construir features de pertencimento. É exatamente a sequência que a
 seção 1 já propõe: Comunidades fica como melhoria, fora do corte deste mês.
@@ -117,24 +117,24 @@ seção 1 já propõe: Comunidades fica como melhoria, fora do corte deste mês.
 **Geolocalização com raio definido.** O roadmap já lista geolocalização na
 Fase 11, mas de forma genérica. Vale ser específico desde já: busca por
 lugares precisa de um raio configurável (ex: "experiências a até 5 km"), não
-só "usar a localização do usuário" — muda a experiência de Mapa/Explorar de
+só "usar a localização do usuário". Muda a experiência de Mapa/Explorar de
 forma direta, e é barato de especificar agora mesmo sem implementar ainda.
 
 **Validar aderência por território e categoria antes de escalar.** Em vez
 de validar com lugares espalhados por qualquer região/categoria, delimitar
 uma combinação específica (ex: uma região da cidade + uma categoria como
 gastronomia) pra confirmar que a recomendação funciona de verdade antes de
-abrir pra tudo. Dá pra incorporar já no passo 5 da seção 3 — o "dado real"
+abrir pra tudo. Dá pra incorporar já no passo 5 da seção 3: o "dado real"
 desse teste pode ser um recorte deliberado, não só qualquer lugar.
 
 **Monetização: ainda não está no papel.** É o ponto que mais falta no ROOV
-hoje — nenhum documento atual discute como o produto gera receita. Vale
+hoje: nenhum documento atual discute como o produto gera receita. Vale
 pensar a jornada monetizada contemplando B2B (lugares/parceiros pagando por
 visibilidade, por exemplo) e B2C (usuário final, possivelmente assinatura)
 desde já, mesmo que a decisão final venha depois. Antes de validar qualquer
 frente B2B, confirmar que é um ativo de valor de verdade e mapear o
-orçamento necessário — não assumir que "vender espaço pra lugares" é óbvio
-só porque parece óbvio. **Não é uma decisão deste documento — é uma lacuna
+orçamento necessário, não assumir que "vender espaço pra lugares" é óbvio
+só porque parece óbvio. **Não é uma decisão deste documento: é uma lacuna
 registrada, pra entrar na pauta com o sócio.**
 
 **Não precisamos fazer tudo agora, mas precisamos ter tudo mapeado.** Já é
@@ -145,44 +145,44 @@ como este documento está estruturado: um corte pequeno pra este mês (seção
 
 ## 5. Parte técnica
 
-*Esta seção é só para quem vai construir — não precisa entrar numa
+*Esta seção é só para quem vai construir, não precisa entrar numa
 conversa de produto.*
 
 ### Stack
 
 - **Frontend:** React 18 + Vite 6 + Tailwind 4, em `web/`.
 - **API:** NestJS + Prisma + PostgreSQL (com PostGIS), em `api/`.
-- **Repositório:** único, privado, sem ferramenta de monorepo — `web/` e
+- **Repositório:** único, privado, sem ferramenta de monorepo. `web/` e
   `api/` são pastas independentes, cada uma com seu próprio `package.json`.
   Motivo registrado em `docs/EMENDA-003-REPO-UNICO-SEM-WORKSPACE.md`.
 
 ### Como rodar local
 
-Ver `README.md` na raiz — resumo: `npm install` e `npm run dev` dentro de
-cada pasta, Postgres gerenciado (sem Docker necessário).
+Ver `README.md` na raiz (resumo: `npm install` e `npm run dev` dentro de
+cada pasta, Postgres gerenciado, sem Docker necessário).
 
 ### Como testar
 
-A API já tem suíte de testes automatizados (Jest) cobrindo autenticação —
+A API já tem suíte de testes automatizados (Jest) cobrindo autenticação:
 `npm test` dentro de `api/`. Convenção: todo módulo novo de backend entra
 com teste antes de ser considerado pronto, mesmo padrão já usado em
 `auth.service.spec.ts` e `jwt-auth.guard.spec.ts`. O frontend ainda não tem
-suíte de testes — decisão a tomar quando ele parar de ser só mock.
+suíte de testes; decisão a tomar quando ele parar de ser só mock.
 
 ### Como construir (ordem técnica dos passos da seção 3)
 
 1. Banco em produção (Supabase, só hospedagem).
-2. Endpoint de listagem de lugares já existe (`GET /v1/places` — conferir
+2. Endpoint de listagem de lugares já existe (`GET /v1/places`, conferir
    paginação por cursor, já é o padrão do resto da API).
-3. No frontend, `services/index.js` hoje decide mock vs. real por módulo —
+3. No frontend, `services/index.js` hoje decide mock vs. real por módulo:
    trocar places para real é mudar essa decisão num lugar só, sem tocar em
    `engine/` nem nos componentes.
 4. Módulo de perfil na API (`users.controller.ts` já existe, falta o PATCH
-   de edição e o campo de avatar — decidir se avatar é upload real
-   (precisa de Storage, puxa a Fase 11 pra frente) ou uma lista de ícones
-   prontos pra começar).
+   de edição e o campo de avatar: decidir se avatar é upload real (precisa
+   de Storage, puxa a Fase 11 pra frente) ou uma lista de ícones prontos
+   pra começar).
 5. Tabela nova (`saved_places` ou equivalente) + endpoints de
-   criar/listar/remover — reaproveita os mesmos `AppException`, guards e
+   criar/listar/remover: reaproveita os mesmos `AppException`, guards e
    padrão de resposta já estabelecidos.
 
 ### Decisões já tomadas (não reabrir sem motivo novo)
@@ -193,7 +193,7 @@ suíte de testes — decisão a tomar quando ele parar de ser só mock.
 - Erro sempre vira `AppException`, nunca `HttpException` crua.
 - O motor de recomendação continua com implementação única em
   `web/src/engine/` até o dia em que o backend precisar dele de verdade
-  (`EMENDA-003`) — não construir um pacote compartilhado antes disso
+  (`EMENDA-003`); não construir um pacote compartilhado antes disso
   acontecer.
 
 Lista completa de invariantes: `README.md`, seção "Invariantes da
