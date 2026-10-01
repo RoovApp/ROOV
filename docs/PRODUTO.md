@@ -3,9 +3,11 @@
 **Data:** 01/out/2026
 **Status:** rascunho para validar entre os sócios antes de travar o plano do mês.
 
-Este documento tem 4 partes: o que entra no MVP, o que já está pronto, o que
-ainda falta (com os próximos passos concretos), e uma parte técnica — essa
-última só interessa a quem vai colocar a mão no código.
+Este documento tem 5 partes: o que entra no MVP, o que já está pronto, o que
+ainda falta (com os próximos passos concretos), pontos estratégicos a
+validar (vindos de uma mentoria externa, filtrados pelo que se aplica aqui),
+e uma parte técnica — essa última só interessa a quem vai colocar a mão no
+código.
 
 ---
 
@@ -99,7 +101,62 @@ servidor quando o segundo cliente (ex: app mobile) precisar dele de verdade.
 
 ---
 
-## 4. Parte técnica
+## 4. Pontos estratégicos a validar
+
+Pontos levantados numa mentoria de um produto irmão (Joyn, matching de
+parceiros pra praticar esporte), filtrados pelo que se aplica ao contexto
+do ROOV — boa parte das notas originais era específica de matching
+esportivo (agenda de jogo, jogadores substitutos, tela de aprovação de
+grupo) e não tem equivalente direto aqui. O que ficou:
+
+**Direção estratégica: confirmada, não precisa mudar.** O ponto central da
+mentoria pro Joyn foi decidir se o produto gira em torno de conexão ou de
+pertencimento antes de construir mais features. O ROOV já tem essa decisão
+tomada — `docs/VISION.md` é explícito: descoberta de experiências é o eixo
+primário, comunidade sustenta a confiança na recomendação, não é o ponto de
+partida. Nada muda aqui, só vale manter a disciplina de checar isso a cada
+feature nova.
+
+**Pertencimento (Comunidades) depois, não antes — já é a decisão tomada.**
+O conselho do mentor foi entender o usuário de verdade (localização,
+persona, comportamento) antes de construir features de pertencimento. É
+exatamente a sequência que a seção 1 já propõe: Comunidades fica como
+melhoria, fora do corte deste mês. Esse ponto não muda nada — só confirma,
+com uma referência externa, que a ordem escolhida é a defendida em outros
+produtos também.
+
+**Geolocalização com raio definido.** O roadmap já lista geolocalização na
+Fase 11, mas de forma genérica. Vale ser específico desde já: busca por
+lugares precisa de um raio configurável (ex: "experiências a até 5 km"), não
+só "usar a localização do usuário" — muda a experiência de Mapa/Explorar de
+forma direta, e é barato de especificar agora mesmo sem implementar ainda.
+
+**Validar aderência por território e categoria antes de escalar.** Em vez
+de validar com lugares espalhados por qualquer região/categoria, delimitar
+uma combinação específica (ex: uma região da cidade + uma categoria como
+gastronomia) pra confirmar que a recomendação funciona de verdade antes de
+abrir pra tudo. Dá pra incorporar já no passo 5 da seção 3 — o "dado real"
+desse teste pode ser um recorte deliberado, não só qualquer lugar.
+
+**Monetização: ainda não está no papel.** É o ponto que mais falta no ROOV
+hoje — nenhum documento atual discute como o produto gera receita. A
+mentoria do Joyn levanta a pergunta certa: pensar a jornada monetizada
+contemplando B2B (lugares/parceiros pagando por visibilidade, por exemplo)
+e B2C (usuário final, possivelmente assinatura) desde já, mesmo que a
+decisão final venha depois. Antes de validar qualquer frente B2B, confirmar
+que é um ativo de valor de verdade e mapear o orçamento necessário — não
+assumir que "vender espaço pra lugares" é óbvio só porque parece óbvio.
+**Não é uma decisão deste documento — é uma lacuna registrada, pra entrar
+na pauta com o sócio.**
+
+**Não precisamos fazer tudo agora, mas precisamos ter tudo mapeado.**
+Diretriz geral da mentoria, e já é como este documento está estruturado: um
+corte pequeno pra este mês (seção 1), o resto mapeado no roadmap, não
+esquecido.
+
+---
+
+## 5. Parte técnica
 
 *Esta seção é só para quem vai construir — não precisa entrar numa
 conversa de produto.*

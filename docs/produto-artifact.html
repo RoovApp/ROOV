@@ -1,0 +1,558 @@
+<title>ROOV MVP</title>
+<style>
+  :root {
+    --bg: #07070a;
+    --bg-raised: #0e0e13;
+    --surface: rgba(255, 255, 255, 0.045);
+    --surface-strong: rgba(255, 255, 255, 0.08);
+    --border: rgba(255, 255, 255, 0.1);
+    --text: #f3f1ee;
+    --text-muted: #a8a3a0;
+    --text-faint: #716d6b;
+
+    --grad-1: #7b2dff;
+    --grad-2: #ff0f7b;
+    --grad-3: #ff6a2a;
+    --grad-4: #ffb400;
+    --roov-gradient: linear-gradient(100deg, var(--grad-1) 0%, var(--grad-2) 36%, var(--grad-3) 68%, var(--grad-4) 100%);
+
+    --status-done: #22c55e;
+    --status-partial: #ffc83d;
+    --status-none: var(--text-faint);
+
+    --radius: 14px;
+    --max: 760px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection { background: rgba(255, 15, 123, 0.3); }
+
+  .wrap {
+    max-width: var(--max);
+    margin: 0 auto;
+    padding: 56px 20px 96px;
+  }
+
+  /* ─── Header ─────────────────────────────────────────── */
+
+  header {
+    margin-bottom: 56px;
+  }
+
+  .wordmark {
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.14em;
+    background: var(--roov-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+    margin-bottom: 22px;
+  }
+
+  h1 {
+    font-size: clamp(32px, 6vw, 44px);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+    text-wrap: balance;
+  }
+
+  .tagline {
+    font-size: 17px;
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin: 0 0 22px;
+    max-width: 52ch;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    font-size: 12px;
+    color: var(--text-faint);
+  }
+
+  .meta-pill {
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 5px 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  /* ─── Section scaffolding ────────────────────────────── */
+
+  section {
+    margin-bottom: 64px;
+  }
+
+  .section-eyebrow {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .section-num {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-faint);
+  }
+
+  h2 {
+    font-size: 23px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0;
+    text-wrap: balance;
+  }
+
+  .lede {
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--text-muted);
+    margin: 0 0 24px;
+    max-width: 64ch;
+  }
+
+  .lede strong { color: var(--text); font-weight: 600; }
+
+  /* ─── Section 1: MVP split ───────────────────────────── */
+
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 620px) {
+    .split { grid-template-columns: 1fr; }
+  }
+
+  .split-col {
+    border-radius: var(--radius);
+    padding: 20px 20px 10px;
+    border: 1px solid var(--border);
+  }
+
+  .split-col.in { background: var(--surface); }
+  .split-col.out {
+    background: transparent;
+    border-style: dashed;
+  }
+
+  .split-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+  }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dot.in { background: var(--roov-gradient); }
+  .dot.out { background: var(--text-faint); }
+
+  .split-item {
+    padding: 11px 0;
+    border-top: 1px solid var(--border);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .split-item:first-of-type { border-top: none; }
+  .split-item b { display: block; font-weight: 600; margin-bottom: 2px; }
+  .split-item span { color: var(--text-muted); font-size: 13px; }
+
+  .split-note {
+    margin-top: 16px;
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+
+  /* ─── Section 2: status rows ─────────────────────────── */
+
+  .status-list {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .status-row {
+    display: grid;
+    grid-template-columns: 132px 1fr;
+    gap: 16px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    align-items: start;
+  }
+  .status-row:first-child { border-top: none; }
+
+  @media (max-width: 560px) {
+    .status-row { grid-template-columns: 1fr; gap: 6px; }
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+    width: fit-content;
+  }
+  .chip::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  .chip.done { color: var(--status-done); background: rgba(34, 197, 94, 0.12); }
+  .chip.partial { color: var(--status-partial); background: rgba(255, 200, 61, 0.14); }
+  .chip.none { color: var(--text-faint); background: rgba(255, 255, 255, 0.05); }
+
+  .status-body b { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 3px; }
+  .status-body span { font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
+
+  /* ─── Section 3: steps ────────────────────────────────── */
+
+  .steps { counter-reset: step; display: flex; flex-direction: column; gap: 2px; }
+
+  .step {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 34px 1fr;
+    gap: 14px;
+    padding: 16px 4px;
+    border-top: 1px solid var(--border);
+  }
+  .step:first-child { border-top: none; }
+
+  .step::before {
+    content: counter(step);
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    font-size: 14px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface-strong);
+    color: var(--text-muted);
+  }
+
+  .step.next::before {
+    background: var(--roov-gradient);
+    color: #0a0a0a;
+  }
+
+  .step b { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 3px; }
+  .step span { font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
+  .step .owner {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--grad-3);
+  }
+
+  /* ─── Section 4: technical appendix ──────────────────── */
+
+  /* ─── Section 4: strategic validation points ─────────── */
+
+  .validate-source {
+    font-size: 12.5px;
+    color: var(--text-faint);
+    margin: -10px 0 22px;
+  }
+
+  .validate-list { display: flex; flex-direction: column; gap: 2px; }
+
+  .validate-item {
+    display: grid;
+    grid-template-columns: 3px 1fr;
+    gap: 16px;
+    padding: 17px 2px;
+    border-top: 1px solid var(--border);
+  }
+  .validate-item:first-child { border-top: none; }
+
+  .validate-item .bar { background: var(--roov-gradient); border-radius: 2px; }
+  .validate-item.neutral .bar { background: var(--surface-strong); }
+
+  .validate-item b { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 5px; }
+  .validate-item p { margin: 0; font-size: 13.5px; line-height: 1.6; color: var(--text-muted); }
+  .validate-item .flag {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--grad-4);
+  }
+
+  .appendix {
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 22px;
+  }
+
+  .appendix .section-eyebrow { margin-bottom: 6px; }
+  .appendix .lede { margin-bottom: 20px; }
+
+  .tech-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px 28px;
+  }
+
+  @media (max-width: 560px) {
+    .tech-grid { grid-template-columns: 1fr; }
+  }
+
+  .tech-block h3 {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    margin: 0 0 10px;
+  }
+
+  .tech-block ul { margin: 0; padding: 0; list-style: none; }
+  .tech-block li {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text-muted);
+    padding: 5px 0;
+  }
+
+  code {
+    font-family: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.92em;
+    background: var(--surface-strong);
+    padding: 1.5px 6px;
+    border-radius: 5px;
+    color: var(--text);
+  }
+
+  .tech-block li code { color: #d8c9ff; }
+
+  footer {
+    margin-top: 72px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 12.5px;
+    color: var(--text-faint);
+    line-height: 1.6;
+  }
+
+  footer a { color: var(--text-muted); }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap">
+
+<div class="wrap">
+
+  <header>
+    <span class="wordmark">ROOV</span>
+    <h1>O que vale a pena viver, agora.</h1>
+    <p class="tagline">Documento de produto para alinhar o corte do MVP, o que já está de pé e os próximos passos — antes de travar o plano do mês com o sócio.</p>
+    <div class="meta-row">
+      <span class="meta-pill">01 out 2026</span>
+      <span class="meta-pill">Rascunho para validar</span>
+      <span class="meta-pill">Meta: funcional até 31 out</span>
+    </div>
+  </header>
+
+  <section>
+    <div class="section-eyebrow"><span class="section-num">01</span><h2>O que estará no MVP</h2></div>
+    <p class="lede">O roadmap oficial do produto define um MVP1 com 7 módulos e DNA integrado em todos eles. Essa continua sendo a visão final — o corte abaixo é um <strong>primeiro degrau</strong>, dimensionado pro que o estado real do backend permite entregar de verdade num mês, não uma substituição da ambição original.</p>
+
+    <div class="split">
+      <div class="split-col in">
+        <div class="split-head"><span class="dot in"></span>Entra neste corte</div>
+        <div class="split-item"><b>Autenticação</b><span>Cadastro, login, logout, sessão persistente</span></div>
+        <div class="split-item"><b>Perfil</b><span>Ver e editar dados básicos, preferências de categoria</span></div>
+        <div class="split-item"><b>Lugares</b><span>Base real, com categoria, localização e horário</span></div>
+        <div class="split-item"><b>Mapa + Explorar</b><span>Lugares reais, ordenados pelo motor de recomendação (DNA, contexto, pesos)</span></div>
+        <div class="split-item"><b>Salvos</b><span>Marcar "quero ir" / "já fui" — sem calendário ainda</span></div>
+      </div>
+      <div class="split-col out">
+        <div class="split-head"><span class="dot out"></span>Fica como melhoria</div>
+        <div class="split-item"><b>Feed social</b><span>Posts, fotos, curtidas, comentários — zero backend hoje</span></div>
+        <div class="split-item"><b>Comunidades</b><span>Criação, participação, moderação — zero backend hoje</span></div>
+        <div class="split-item"><b>Agenda avançada</b><span>Calendário, eventos, lembretes</span></div>
+        <div class="split-item"><b>Pesquisa global</b><span>Não iniciada</span></div>
+        <div class="split-item"><b>Integrações</b><span>Fotos reais, clima real, mapa de verdade, geolocalização</span></div>
+        <div class="split-item"><b>DNA no servidor</b><span>O motor já existe e funciona — rodar no servidor é pra quando um segundo cliente precisar dele</span></div>
+      </div>
+    </div>
+
+    <p class="split-note">O critério por trás da divisão: <strong>dá pra demonstrar "o que vale a pena viver, agora" sem esse módulo?</strong> Mapa, Explorar e Salvos com recomendação de verdade já contam essa história. Feed e Comunidades contam uma história diferente — de rede social — que vale construir em seguida, não ao mesmo tempo.</p>
+  </section>
+
+  <section>
+    <div class="section-eyebrow"><span class="section-num">02</span><h2>O que já temos</h2></div>
+    <p class="lede">Avaliação honesta do que roda de verdade e já foi testado — não do que está desenhado na tela.</p>
+
+    <div class="status-list">
+      <div class="status-row">
+        <span class="chip done">Vivido</span>
+        <div class="status-body"><b>Autenticação</b><span>Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. 20 testes automatizados passando.</span></div>
+      </div>
+      <div class="status-row">
+        <span class="chip partial">Quero viver</span>
+        <div class="status-body"><b>Lugares (backend)</b><span>CRUD já existe — criar, atualizar, consultar, categoria, horário. Falta confirmar se cobre tudo que o app vai precisar.</span></div>
+      </div>
+      <div class="status-row">
+        <span class="chip partial">Quero viver</span>
+        <div class="status-body"><b>Motor de recomendação</b><span>DNA, pesos, contexto e agenda já existem e funcionam — sofisticado de verdade. Só que roda inteiro no navegador, sobre 20 lugares inventados. Nunca viu um dado real.</span></div>
+      </div>
+      <div class="status-row">
+        <span class="chip partial">Quero viver</span>
+        <div class="status-body"><b>Mapa / Explorar</b><span>Telas prontas e navegáveis. Só faltam ligar no dado real — o motor já está pronto do lado de dentro.</span></div>
+      </div>
+      <div class="status-row">
+        <span class="chip partial">Quero viver</span>
+        <div class="status-body"><b>Perfil</b><span>Login e sessão são reais. Editar dados, avatar e preferências ainda não têm backend.</span></div>
+      </div>
+      <div class="status-row">
+        <span class="chip none">Ainda não</span>
+        <div class="status-body"><b>Feed, Comunidades, Agenda avançada</b><span>Telas existem, bonitas e navegáveis — 100% sobre dado inventado. Nenhuma das três tem uma linha de backend.</span></div>
+      </div>
+      <div class="status-row">
+        <span class="chip done">Vivido</span>
+        <div class="status-body"><b>Infraestrutura</b><span>Projeto organizado, testes automatizados no backend, hospedagem decidida (Postgres gerenciado, sem depender de Docker local).</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-eyebrow"><span class="section-num">03</span><h2>O que falta e próximos passos</h2></div>
+    <p class="lede">Em ordem — cada passo depende do anterior fechar primeiro.</p>
+
+    <div class="steps">
+      <div class="step next">
+        <div><b>Banco de dados em produção</b><span>Postgres gerenciado (Supabase, só como hospedagem — a autenticação continua nossa). Falta criar a conta, o projeto, ativar a extensão PostGIS e passar a connection string.</span><span class="owner">Com você agora</span></div>
+      </div>
+      <div class="step">
+        <div><b>Ligar Mapa e Explorar no dado real</b><span>Trocar os lugares inventados pela chamada de verdade na API, sem tocar no motor de recomendação — ele já está pronto, só precisa parar de receber dado de mentira.</span></div>
+      </div>
+      <div class="step">
+        <div><b>Completar Perfil</b><span>Editar nome, bio, avatar e preferências de categoria.</span></div>
+      </div>
+      <div class="step">
+        <div><b>Salvos simples</b><span>Marcar lugar como "quero ir" / "já fui".</span></div>
+      </div>
+      <div class="step">
+        <div><b>Validar com dado real</b><span>Com lugares de verdade no lugar do mock, primeiro teste de verdade de se a recomendação continua fazendo sentido.</span></div>
+      </div>
+      <div class="step">
+        <div><b>Decisão de hospedagem</b><span>API em Render/Fly/Railway (o container já está pronto pra qualquer uma) e o front em Vercel/Netlify.</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="section-eyebrow"><span class="section-num">04</span><h2>Pontos estratégicos a validar</h2></div>
+    <p class="validate-source">Vindos de uma mentoria de um produto irmão (Joyn, matching de parceiros pra praticar esporte) — filtrados pelo que se aplica aqui. Boa parte das notas originais era específica de matching esportivo e não tem equivalente direto no ROOV.</p>
+
+    <div class="validate-list">
+      <div class="validate-item neutral">
+        <div class="bar"></div>
+        <div><b>Direção estratégica: confirmada, não precisa mudar</b><p>O ponto central da mentoria pro Joyn foi decidir entre conexão e pertencimento antes de construir mais features. O ROOV já tem isso definido — <code>VISION.md</code> é explícito: descoberta é o eixo primário, comunidade sustenta a confiança na recomendação, não é ponto de partida.</p></div>
+      </div>
+      <div class="validate-item neutral">
+        <div class="bar"></div>
+        <div><b>Comunidades depois, não antes — já é a decisão tomada</b><p>O conselho do mentor foi entender o usuário de verdade antes de construir pertencimento. É exatamente a sequência que a seção 01 já propõe. Esse ponto não muda nada — só confirma, com referência externa, que a ordem escolhida é defendida em outros produtos também.</p></div>
+      </div>
+      <div class="validate-item">
+        <div class="bar"></div>
+        <div><b>Geolocalização com raio definido</b><p>O roadmap já lista geolocalização na Fase 11, de forma genérica. Vale ser específico desde já: busca por lugares precisa de um raio configurável ("experiências a até 5 km"), não só "usar a localização do usuário".</p></div>
+      </div>
+      <div class="validate-item">
+        <div class="bar"></div>
+        <div><b>Validar aderência por território e categoria antes de escalar</b><p>Delimitar uma combinação específica (uma região da cidade + uma categoria, como gastronomia) pra confirmar que a recomendação funciona antes de abrir pra tudo. Cabe no passo 5 da seção anterior.</p></div>
+      </div>
+      <div class="validate-item">
+        <div class="bar"></div>
+        <div><b>Monetização ainda não está no papel</b><p>O que mais falta hoje — nenhum documento discute como o produto gera receita. Pensar a jornada monetizada com B2B (lugares pagando por visibilidade) e B2C (assinatura) desde já. Antes de validar qualquer frente B2B, confirmar que é um ativo de valor de verdade.</p><span class="flag">Lacuna registrada, não decisão</span></div>
+      </div>
+      <div class="validate-item neutral">
+        <div class="bar"></div>
+        <div><b>Não precisamos fazer tudo agora, mas precisamos ter tudo mapeado</b><p>Diretriz geral da mentoria — e já é como este documento está estruturado: um corte pequeno pra este mês, o resto mapeado no roadmap, não esquecido.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="appendix">
+    <div class="section-eyebrow"><span class="section-num">05</span><h2>Parte técnica</h2></div>
+    <p class="lede">Só pra quem vai construir — não precisa entrar na conversa de produto.</p>
+
+    <div class="tech-grid">
+      <div class="tech-block">
+        <h3>Stack</h3>
+        <ul>
+          <li>Frontend: React 18 + Vite 6 + Tailwind 4, em <code>web/</code></li>
+          <li>API: NestJS + Prisma + PostgreSQL (PostGIS), em <code>api/</code></li>
+          <li>Repo único e privado, sem ferramenta de monorepo</li>
+        </ul>
+      </div>
+      <div class="tech-block">
+        <h3>Como rodar</h3>
+        <ul>
+          <li><code>npm install</code> + <code>npm run dev</code> dentro de cada pasta</li>
+          <li>Postgres gerenciado — sem Docker local necessário</li>
+          <li>Ver <code>README.md</code> na raiz do repositório</li>
+        </ul>
+      </div>
+      <div class="tech-block">
+        <h3>Testes</h3>
+        <ul>
+          <li>API: Jest, <code>npm test</code> em <code>api/</code></li>
+          <li>Convenção: todo módulo novo de backend entra com teste antes de ser considerado pronto</li>
+          <li>Frontend ainda sem suíte — decisão pra quando parar de ser só mock</li>
+        </ul>
+      </div>
+      <div class="tech-block">
+        <h3>Decisões que não se reabrem sem motivo novo</h3>
+        <ul>
+          <li>Autenticação é nossa, nunca de provedor externo</li>
+          <li>Toda rota nasce protegida; público é exceção explícita</li>
+          <li>Erro sempre vira <code>AppException</code></li>
+          <li>Motor de recomendação com implementação única, em <code>web/src/engine/</code>, até o backend precisar dele de verdade</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Documentação completa — incluindo as decisões técnicas registradas (EMENDA-001, 002, 003) e o roadmap de 12 fases — vive em <code>docs/</code> no repositório <code>github.com/Gabriel97-PO/roov</code>. Este documento resume o que importa pra decisão de produto; o repositório tem o detalhe por trás de cada linha aqui.
+  </footer>
+
+</div>
