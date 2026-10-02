@@ -14,6 +14,7 @@ import {
 } from 'class-validator';
 import { PlaceCategory } from '@prisma/client';
 import { PlaceHoursDto } from './place-hours.dto';
+import { SeedTagsDto } from './seed-tags.dto';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -76,4 +77,10 @@ export class CreatePlaceDto {
   @ValidateNested()
   @Type(() => PlaceHoursDto)
   hours!: PlaceHoursDto;
+
+  /** Ponte temporária até Posts existir — ver EMENDA-004. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SeedTagsDto)
+  seedTags?: SeedTagsDto;
 }

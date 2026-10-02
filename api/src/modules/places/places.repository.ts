@@ -15,6 +15,8 @@ export interface CreatePlaceData {
   photos?: string[];
   priceRange: number;
   hours: Prisma.InputJsonValue;
+  /** Ponte temporária até Posts existir — ver EMENDA-004. */
+  seedTags?: Prisma.InputJsonValue;
   createdById: string;
 }
 
@@ -32,6 +34,8 @@ export interface UpdatePlaceData {
   photos?: string[];
   priceRange?: number;
   hours?: Prisma.InputJsonValue;
+  /** Ponte temporária até Posts existir — ver EMENDA-004. */
+  seedTags?: Prisma.InputJsonValue;
   status?: PlaceStatus;
 }
 

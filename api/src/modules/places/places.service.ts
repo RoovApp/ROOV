@@ -12,6 +12,14 @@ export interface PublicPlaceHours {
   closedOn?: number[];
 }
 
+/** Ponte temporária até Posts existir — ver EMENDA-004. */
+export interface PublicPlaceSeedTags {
+  ambiente?: string[];
+  vibe?: string[];
+  publico?: string[];
+  perfil?: string[];
+}
+
 export interface PublicPlace {
   id: string;
   name: string;
@@ -26,6 +34,7 @@ export interface PublicPlace {
   photos: string[];
   priceRange: number;
   hours: PublicPlaceHours;
+  seedTags: PublicPlaceSeedTags | null;
   status: Place['status'];
   createdById: string;
   createdAt: Date;
@@ -53,6 +62,7 @@ export function toPublicPlace(place: Place): PublicPlace {
     photos: place.photos,
     priceRange: place.priceRange,
     hours: place.hours as unknown as PublicPlaceHours,
+    seedTags: (place.seedTags as unknown as PublicPlaceSeedTags | null) ?? null,
     status: place.status,
     createdById: place.createdById,
     createdAt: place.createdAt,
@@ -103,6 +113,7 @@ export class PlacesService {
       photos: dto.photos,
       priceRange: dto.priceRange,
       hours: { ...dto.hours },
+      seedTags: dto.seedTags ? { ...dto.seedTags } : undefined,
       createdById: userId,
     });
     return toPublicPlace(place);
@@ -132,6 +143,7 @@ export class PlacesService {
     const updated = await this.places.update(id, {
       ...dto,
       hours: dto.hours ? { ...dto.hours } : undefined,
+      seedTags: dto.seedTags ? { ...dto.seedTags } : undefined,
     });
     return toPublicPlace(updated);
   }

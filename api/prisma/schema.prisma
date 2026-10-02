@@ -123,8 +123,9 @@ enum PlaceStatus {
 ///
 /// Sem `distanceKm`: é projeção de consulta (depende de quem pergunta e de
 /// onde), nunca um atributo do lugar — armazená-lo impediria cache
-/// compartilhado entre usuários. Sem `dna`/`postsCount`/`savesCount`: são
-/// derivados de Posts (Fase 5) e DNA (Fase 6), que ainda não existem.
+/// compartilhado entre usuários. Sem `postsCount`/`savesCount`: são
+/// derivados de Posts (Fase 5), que ainda não existe. `seedTags` é exceção
+/// deliberada, ver EMENDA-004.
 model Place {
   id String @id @default(uuid()) @db.Uuid
 
@@ -149,6 +150,12 @@ model Place {
   /// `{ open: "HH:MM", close: "HH:MM", closedOn?: number[] }` — espelha
   /// exatamente o formato de `domain/types.js` do frontend.
   hours Json
+
+  /// Semente de curadoria manual para o DNA do lugar — ponte temporária até
+  /// Posts (Fase 5) existir de verdade. Formato:
+  /// `{ ambiente: string[], vibe: string[], publico: string[], perfil: string[] }`.
+  /// Ver EMENDA-004.
+  seedTags Json? @map("seed_tags")
 
   status PlaceStatus @default(novo)
 
