@@ -21,7 +21,7 @@ export class ApiError extends Error {
  * @param {string} path
  * @param {{ method?: string, body?: unknown, accessToken?: string }} [options]
  */
-export async function apiRequest(path, { method = 'GET', body, accessToken } = {}) {
+async function request(path, { method = 'GET', body, accessToken } = {}) {
   const headers = { 'Content-Type': 'application/json' };
   if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
 
@@ -39,5 +39,27 @@ export async function apiRequest(path, { method = 'GET', body, accessToken } = {
     throw new ApiError(code, message, details);
   }
 
+  return payload;
+}
+
+/**
+ * Chamada comum: devolve só `data`. É o que quase todo endpoint precisa.
+ * @param {string} path
+ * @param {{ method?: string, body?: unknown, accessToken?: string }} [options]
+ */
+export async function apiRequest(path, options) {
+  const payload = await request(path, options);
   return payload?.data;
+}
+
+/**
+ * Para endpoints paginados (cursor): devolve `data` e `meta` juntos, porque
+ * `meta.nextCursor`/`meta.hasMore` são informação de verdade, não só
+ * metadado descartável.
+ * @param {string} path
+ * @param {{ method?: string, body?: unknown, accessToken?: string }} [options]
+ */
+export async function apiRequestPage(path, options) {
+  const payload = await request(path, options);
+  return { data: payload?.data ?? [], meta: payload?.meta };
 }

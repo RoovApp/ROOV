@@ -83,7 +83,14 @@ export function scorePlace(place, ctx) {
   };
 }
 
-function proximityScore(km = 0) {
+/**
+ * Sem distância conhecida (lugar real ainda sem geolocalização do usuário,
+ * ver EMENDA-004), o padrão é neutro, nunca "mais perto possível": tratar
+ * ausência de dado como km=0 inflaria artificialmente a pontuação de todo
+ * lugar real recém-chegado.
+ */
+function proximityScore(km) {
+  if (km == null) return 0.5;
   if (km <= 1) return 1;
   if (km <= 3) return 0.85;
   if (km <= 6) return 0.65;

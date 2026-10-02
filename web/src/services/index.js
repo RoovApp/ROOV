@@ -21,6 +21,8 @@ import {
 } from './mock/social.js';
 import { buildPlaceDna } from '../engine/dna.js';
 import { TAG_GROUPS } from '../domain/taxonomy.js';
+import { apiRequestPage } from './apiClient.js';
+import { loadSession } from './auth.js';
 
 const GROUP_OF_TAG = (() => {
   const map = {};
@@ -67,14 +69,80 @@ function consolidateDna(place, posts) {
   return merged;
 }
 
-/** Índice em memória construído uma vez por sessão. */
-const db = (() => {
+const PLACES_PAGE_LIMIT = 50;
+
+/**
+ * Lugares reais, cadastrados via `api/`. `seedTags` é a ponte temporária até
+ * Posts existir de verdade — ver `docs/EMENDA-004-SEED-TAGS-NO-PLACE.md` no
+ * roov-monorepo. Pagina por cursor até acabar (teto de 20 páginas = 1000
+ * lugares, segurança contra loop infinito, não um limite de produto).
+ *
+ * Nunca derruba a inicialização do app: se a API estiver fora do ar ou a
+ * sessão tiver expirado, a UI simplesmente segue só com os lugares mockados.
+ */
+async function fetchRealPlaces() {
+  const session = loadSession();
+  if (!session) return [];
+
+  try {
+    const places = [];
+    let cursor;
+    for (let page = 0; page < 20; page += 1) {
+      const query = new URLSearchParams({ limit: String(PLACES_PAGE_LIMIT) });
+      if (cursor) query.set('cursor', cursor);
+      const { data, meta } = await apiRequestPage(`/places?${query}`, {
+        accessToken: session.accessToken,
+      });
+      places.push(...data);
+      if (!meta.hasMore) break;
+      cursor = meta.nextCursor;
+    }
+
+    return places.map((place) => ({
+      id: place.id,
+      name: place.name,
+      category: place.category,
+      placeType: place.placeType,
+      neighborhood: place.neighborhood,
+      city: place.city,
+      state: place.state,
+      country: place.country,
+      coords: { lat: place.latitude, lng: place.longitude },
+      photos: place.photos,
+      priceRange: place.priceRange,
+      hours: place.hours,
+      status: place.status,
+      createdAt: place.createdAt,
+      seedTags: place.seedTags ?? undefined,
+    }));
+  } catch (err) {
+    console.warn('[roov] Lugares reais indisponíveis, seguindo só com o mock.', err);
+    return [];
+  }
+}
+
+/**
+ * Índice em memória, construído uma vez por sessão do app (não uma vez por
+ * chamada): `getDb()` memoiza a promise, então todo mundo que chama durante
+ * a hidratação inicial (Cap. 26) compartilha a mesma requisição de lugares
+ * reais, em vez de disparar uma por serviço.
+ *
+ * União de mock + real, não substituição: Feed, Comunidades e Biblioteca
+ * continuam 100% mock (Fases 5/8 do roadmap) e dependem dos ids mockados
+ * existentes. Mapa e Explorar passam a ver os dois conjuntos juntos.
+ */
+let dbPromise = null;
+
+/** Síncrono de propósito: `byIdSync` (autor de um post) não pode esperar a promise de `db`. */
+const USER_BY_ID = Object.fromEntries(MOCK_USERS.map((u) => [u.id, u]));
+
+async function buildDb() {
   const postsByPlace = {};
   for (const post of MOCK_POSTS) {
     (postsByPlace[post.placeId] ??= []).push(post);
   }
 
-  const places = MOCK_PLACES.map((place) => {
+  const mockPlaces = MOCK_PLACES.map((place) => {
     const posts = postsByPlace[place.id] ?? [];
     const { seedTags, ...rest } = place;
     return {
@@ -84,26 +152,44 @@ const db = (() => {
     };
   });
 
-  const placeById = Object.fromEntries(places.map((p) => [p.id, p]));
-  const userById = Object.fromEntries(MOCK_USERS.map((u) => [u.id, u]));
+  const realPlaces = (await fetchRealPlaces()).map((place) => {
+    const { seedTags, ...rest } = place;
+    return {
+      ...rest,
+      dna: consolidateDna(place, []),
+      postsCount: 0,
+    };
+  });
 
-  return { places, placeById, userById, postsByPlace };
-})();
+  const places = [...mockPlaces, ...realPlaces];
+  const placeById = Object.fromEntries(places.map((p) => [p.id, p]));
+
+  return { places, placeById, userById: USER_BY_ID, postsByPlace };
+}
+
+function getDb() {
+  if (!dbPromise) dbPromise = buildDb();
+  return dbPromise;
+}
 
 /* ─── Places ──────────────────────────────────────────────────────────────── */
 
 export const placesService = {
   async list() {
+    const db = await getDb();
     return delay(db.places);
   },
   async byId(id) {
+    const db = await getDb();
     return delay(db.placeById[id] ?? null);
   },
   async byIds(ids) {
+    const db = await getDb();
     return delay(ids.map((id) => db.placeById[id]).filter(Boolean));
   },
   /** Lugares com DNA parecido — usado no "experiências similares" do detalhe. */
   async similarTo(id, limit = 4) {
+    const db = await getDb();
     const place = db.placeById[id];
     if (!place) return delay([]);
     const target = new Set(
@@ -130,6 +216,7 @@ export const postsService = {
     return delay(MOCK_POSTS);
   },
   async byPlace(placeId) {
+    const db = await getDb();
     return delay(db.postsByPlace[placeId] ?? []);
   },
   async byAuthor(authorId) {
@@ -142,6 +229,7 @@ export const postsService = {
    */
   async create({ placeId, media, caption, tags, mediaType = 'photo' }) {
     if (!placeId) throw new Error('Todo post precisa pertencer a um lugar.');
+    const db = await getDb();
 
     const required = TAG_GROUPS.filter((g) => g.required).map((g) => g.key);
     const provided = new Set(tags.map((t) => GROUP_OF_TAG[t]).filter(Boolean));
@@ -193,10 +281,11 @@ function rebuildSeed(place) {
 
 export const usersService = {
   async me() {
+    const db = await getDb();
     return delay(db.userById[CURRENT_USER_ID]);
   },
   byIdSync(id) {
-    return db.userById[id] ?? null;
+    return USER_BY_ID[id] ?? null;
   },
   async profile() {
     const level = [...LEVELS].reverse().find((l) => MOCK_PROFILE.xp >= l.minXp) ?? LEVELS[0];
@@ -243,6 +332,7 @@ export const communitiesService = {
   async postsOf(id) {
     const community = MOCK_COMMUNITIES.find((c) => c.id === id);
     if (!community) return delay([]);
+    const db = await getDb();
     const tags = new Set(community.tags);
     const posts = MOCK_POSTS.filter((post) => {
       const place = db.placeById[post.placeId];
@@ -266,6 +356,7 @@ export const searchService = {
   async query(term) {
     const q = term.trim().toLowerCase();
     if (!q) return delay({ places: [], communities: [], people: [], tags: [], locations: [] });
+    const db = await getDb();
 
     const places = db.places.filter((p) =>
       [p.name, p.placeType, p.neighborhood, p.city].join(' ').toLowerCase().includes(q),
