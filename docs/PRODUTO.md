@@ -56,8 +56,8 @@ que está desenhado na tela.
 | --- | --- | --- |
 | Autenticação | 🟢 Vivido | Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. 20 testes automatizados passando |
 | Lugares (backend) | 🟡 Quero viver | CRUD existe (criar, atualizar, consultar, categorias, horário), mas ainda não confirmado se cobre tudo que o front vai precisar |
-| Motor de recomendação (DNA, pesos, contexto, agenda) | 🟡 Quero viver | Existe, funciona, e é sofisticado, só que roda inteiro no navegador, sobre 20 lugares de mentira. Nunca viu um dado real |
-| Mapa / Explorar (frontend) | 🟡 Quero viver | Telas prontas, só faltam ligar no dado real |
+| Motor de recomendação (DNA, pesos, contexto, agenda) | 🟡 Quero viver | Roda sobre mock + lugar real (seedTags, EMENDA-004) desde 01/out. Ainda não viu sinal de uso de verdade (Posts, Fase 5) |
+| Mapa / Explorar (frontend) | 🟢 Vivido | Ligados em `api/` desde 01/out (EMENDA-004); mostram mock + lugar real juntos. Falta geolocalização de verdade (`distanceKm` é neutro pra lugar real) |
 | Perfil (frontend + backend) | 🟡 Quero viver | Login/logout funcionam de verdade; editar perfil, avatar e preferências ainda não têm backend |
 | Feed, Comunidades, Agenda avançada | ⚪ Ainda não | Telas existem (bonitas, navegáveis), mas 100% sobre dado inventado. Nenhuma dessas três tem uma linha de backend |
 | Infraestrutura | 🟢 Vivido | Estrutura do projeto organizada, testes automatizados no backend, hospedagem decidida (Postgres gerenciado, sem Docker) |
@@ -74,21 +74,29 @@ outro lado da ponte pro resto dos módulos.
 
 Em ordem: cada passo depende do anterior.
 
-1. **Banco de dados em produção.** Decidido: Postgres gerenciado (Supabase,
-   só como hospedagem, não para login, essa decisão já foi tomada e
-   revertida uma vez, ver `docs/EMENDA-002-AUTENTICACAO-PROPRIA.md`). Falta
-   criar a conta, o projeto, ativar a extensão PostGIS e passar a connection
-   string. *Responsável: Gabriel.*
-2. **Ligar Mapa e Explorar no dado real.** Trocar `services/mock/places.js`
-   pela chamada de verdade em `api/`, sem mudar o motor de recomendação: ele
-   já está pronto, só precisa parar de receber dado inventado.
+1. ~~**Banco de dados em produção.**~~ **Concluído em 01/out.** Postgres
+   gerenciado (Supabase, só como hospedagem, não para login, ver
+   `docs/EMENDA-002-AUTENTICACAO-PROPRIA.md`), PostGIS ativo, migrations
+   aplicadas.
+2. ~~**Ligar Mapa e Explorar no dado real.**~~ **Concluído em 01/out, com uma
+   ressalva registrada:** não foi só trocar a fonte de dado. O motor de
+   recomendação precisava de `place.dna`, que não existia em lugar nenhum pra
+   lugar real (Posts, Fase 5, não existe ainda). Ver
+   `docs/EMENDA-004-SEED-TAGS-NO-PLACE.md`: `Place` ganhou `seedTags`
+   (curadoria manual, ponte temporária) pra alimentar o motor sem esperar a
+   Fase 5/6. Hoje `services/index.js` soma lugares mockados com os reais
+   vindos da `api/`; Feed/Comunidades continuam só mockados (dependem de
+   Posts, fora do corte). Validado ponta a ponta: lugar criado via API
+   aparece em Mapa/Explorar/Busca/Detalhe com DNA correto.
 3. **Completar Perfil.** Editar nome/bio/avatar, preferências de categoria.
    Fecha a Fase 3 do roadmap.
 4. **Salvos simples.** Marcar lugar como "quero ir"/"já fui": a versão sem
    calendário da Fase 9.
-5. **Validar com dado real.** Com os 20 lugares de mock trocados por lugares
-   de verdade (cadastrados à mão ou importados), testar se a recomendação
-   continua fazendo sentido: é o primeiro teste de verdade do motor de DNA.
+5. **Cadastrar lugares de verdade.** Não existe tela de "cadastrar lugar" no
+   frontend ainda: hoje só dá pra criar lugar via chamada direta à API. Pra
+   validar a recomendação com um conjunto real (território + categoria
+   específicos, ponto da seção 4), ou se cadastra via script/API por enquanto,
+   ou essa tela entra na lista antes do passo 5 valer a pena de verdade.
 6. **Decisão de hospedagem da API e do front**, depois do MVP rodando local
    (Render/Fly/Railway para a API, o `Dockerfile` já existe pronto pra
    qualquer uma; Vercel/Netlify para o front).

@@ -266,6 +266,15 @@
     color: #0a0a0a;
   }
 
+  .step.done::before {
+    content: '✓';
+    background: rgba(34, 197, 94, 0.14);
+    color: var(--status-done);
+  }
+
+  .step.done b { color: var(--text-muted); }
+  .step.done span { text-decoration: none; }
+
   .step b { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 3px; }
   .step span { font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
   .step .owner {
@@ -278,7 +287,7 @@
     color: var(--grad-3);
   }
 
-  /* ─── Section 4: technical appendix ──────────────────── */
+  .step .owner.done { color: var(--status-done); }
 
   /* ─── Section 4: strategic validation points ─────────── */
 
@@ -313,6 +322,8 @@
     text-transform: uppercase;
     color: var(--grad-4);
   }
+
+  /* ─── Section 5: technical appendix ───────────────────── */
 
   .appendix {
     background: var(--bg-raised);
@@ -426,16 +437,20 @@
         <div class="status-body"><b>Autenticação</b><span>Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. 20 testes automatizados passando.</span></div>
       </div>
       <div class="status-row">
-        <span class="chip partial">Quero viver</span>
-        <div class="status-body"><b>Lugares (backend)</b><span>CRUD já existe: criar, atualizar, consultar, categoria, horário. Falta confirmar se cobre tudo que o app vai precisar.</span></div>
+        <span class="chip done">Vivido</span>
+        <div class="status-body"><b>Banco de dados em produção</b><span>Postgres gerenciado no Supabase, com PostGIS e pg_trgm ativos. As 3 migrations originais do Prisma rodaram sem erro e cadastro + login foram validados de ponta a ponta contra o banco real.</span></div>
       </div>
       <div class="status-row">
         <span class="chip partial">Quero viver</span>
-        <div class="status-body"><b>Motor de recomendação</b><span>DNA, pesos, contexto e agenda já existem e funcionam, sofisticado de verdade. Só que roda inteiro no navegador, sobre 20 lugares inventados. Nunca viu um dado real.</span></div>
+        <div class="status-body"><b>Lugares (backend)</b><span>CRUD já existe: criar, atualizar, consultar, categoria, horário, e agora <code>seedTags</code> (EMENDA-004). Falta confirmar se cobre tudo que o app vai precisar.</span></div>
       </div>
       <div class="status-row">
         <span class="chip partial">Quero viver</span>
-        <div class="status-body"><b>Mapa / Explorar</b><span>Telas prontas e navegáveis. Só faltam ligar no dado real: o motor já está pronto do lado de dentro.</span></div>
+        <div class="status-body"><b>Motor de recomendação</b><span>DNA, pesos, contexto e agenda já existem e funcionam, sofisticado de verdade. Desde 01/out roda sobre mock + lugar real (seedTags, EMENDA-004), mas ainda não viu sinal de uso de verdade: Posts (Fase 5) não existe.</span></div>
+      </div>
+      <div class="status-row">
+        <span class="chip done">Vivido</span>
+        <div class="status-body"><b>Mapa / Explorar</b><span>Ligados em <code>api/</code> desde 01/out (EMENDA-004): mostram lugar mockado e lugar real juntos, com DNA calculado nos dois. Falta geolocalização de verdade: sem ela, <code>distanceKm</code> de um lugar real fica neutro, nem perto nem longe.</span></div>
       </div>
       <div class="status-row">
         <span class="chip partial">Quero viver</span>
@@ -457,20 +472,20 @@
     <p class="lede">Em ordem: cada passo depende do anterior fechar primeiro.</p>
 
     <div class="steps">
+      <div class="step done">
+        <div><b>Banco de dados em produção</b><span>Postgres gerenciado no Supabase (região São Paulo), com PostGIS e pg_trgm ativados. As migrations do Prisma foram aplicadas e um cadastro + login reais foram validados contra o banco.</span><span class="owner done">Concluído em 01 out</span></div>
+      </div>
+      <div class="step done">
+        <div><b>Ligar Mapa e Explorar no dado real</b><span>Não foi só trocar a fonte: o motor de recomendação precisava de DNA, que não existia em lugar nenhum pra lugar real. <code>Place</code> ganhou <code>seedTags</code> como ponte temporária (EMENDA-004) até Posts (Fase 5) existir. Validado ponta a ponta: lugar criado via API aparece em Mapa, Explorar, Busca e Detalhe com DNA correto.</span><span class="owner done">Concluído em 01 out</span></div>
+      </div>
       <div class="step next">
-        <div><b>Banco de dados em produção</b><span>Postgres gerenciado (Supabase, só como hospedagem, a autenticação continua nossa). Falta criar a conta, o projeto, ativar a extensão PostGIS e passar a connection string.</span><span class="owner">Com você agora</span></div>
-      </div>
-      <div class="step">
-        <div><b>Ligar Mapa e Explorar no dado real</b><span>Trocar os lugares inventados pela chamada de verdade na API, sem tocar no motor de recomendação: ele já está pronto, só precisa parar de receber dado de mentira.</span></div>
-      </div>
-      <div class="step">
         <div><b>Completar Perfil</b><span>Editar nome, bio, avatar e preferências de categoria.</span></div>
       </div>
       <div class="step">
         <div><b>Salvos simples</b><span>Marcar lugar como "quero ir" / "já fui".</span></div>
       </div>
       <div class="step">
-        <div><b>Validar com dado real</b><span>Com lugares de verdade no lugar do mock, primeiro teste de verdade de se a recomendação continua fazendo sentido.</span></div>
+        <div><b>Cadastrar lugares de verdade</b><span>Não existe tela de "cadastrar lugar" no app ainda: hoje só dá pra criar via chamada direta à API. Pra validar a recomendação com um conjunto real (território + categoria específicos, seção 04), ou cadastra via script por enquanto, ou essa tela entra na lista antes deste passo valer a pena.</span></div>
       </div>
       <div class="step">
         <div><b>Decisão de hospedagem</b><span>API em Render/Fly/Railway (o container já está pronto pra qualquer uma) e o front em Vercel/Netlify.</span></div>
@@ -526,7 +541,7 @@
         <h3>Como rodar</h3>
         <ul>
           <li><code>npm install</code> + <code>npm run dev</code> dentro de cada pasta</li>
-          <li>Postgres gerenciado, sem Docker local necessário</li>
+          <li>Banco: Postgres gerenciado no Supabase (região São Paulo), connection string em <code>api/.env</code></li>
           <li>Ver <code>README.md</code> na raiz do repositório</li>
         </ul>
       </div>
@@ -545,13 +560,14 @@
           <li>Toda rota nasce protegida; público é exceção explícita</li>
           <li>Erro sempre vira <code>AppException</code></li>
           <li>Motor de recomendação com implementação única, em <code>web/src/engine/</code>, até o backend precisar dele de verdade</li>
+          <li><code>seedTags</code> no <code>Place</code> é ponte temporária (EMENDA-004), não o desenho final do DNA</li>
         </ul>
       </div>
     </div>
   </section>
 
   <footer>
-    Documentação completa (incluindo as decisões técnicas registradas: EMENDA-001, 002, 003, e o roadmap de 12 fases) vive em <code>docs/</code> no repositório <code>github.com/Gabriel97-PO/roov</code>. Este documento resume o que importa pra decisão de produto; o repositório tem o detalhe por trás de cada linha aqui.
+    Documentação completa (incluindo as decisões técnicas registradas: EMENDA-001 a 004, e o roadmap de 12 fases) vive em <code>docs/</code> no repositório <code>github.com/Gabriel97-PO/roov</code>. Este documento resume o que importa pra decisão de produto; o repositório tem o detalhe por trás de cada linha aqui.
   </footer>
 
 </div>
