@@ -94,6 +94,11 @@
     font-weight: 600;
   }
 
+  .meta-pill.blocked {
+    border-color: rgba(255, 15, 123, 0.4);
+    color: var(--grad-2);
+  }
+
   /* ─── Section scaffolding ────────────────────────────── */
 
   section {
@@ -275,6 +280,14 @@
   .step.done b { color: var(--text-muted); }
   .step.done span { text-decoration: none; }
 
+  .step.blocked::before {
+    content: '!';
+    background: rgba(255, 15, 123, 0.14);
+    color: var(--grad-2);
+  }
+
+  .step .owner.blocked { color: var(--grad-2); }
+
   .step b { display: block; font-size: 14.5px; font-weight: 600; margin-bottom: 3px; }
   .step span { font-size: 13.5px; line-height: 1.55; color: var(--text-muted); }
   .step .owner {
@@ -397,6 +410,7 @@
       <span class="meta-pill">01 out 2026</span>
       <span class="meta-pill">Rascunho para validar</span>
       <span class="meta-pill">Meta: funcional até 31 out</span>
+      <span class="meta-pill blocked">Pausado em 10 out</span>
     </div>
   </header>
 
@@ -434,7 +448,7 @@
     <div class="status-list">
       <div class="status-row">
         <span class="chip done">Vivido</span>
-        <div class="status-body"><b>Autenticação</b><span>Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. 20 testes automatizados passando.</span></div>
+        <div class="status-body"><b>Autenticação</b><span>Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. Desde 07/out, cadastro aceita localização opcional e exige confirmar um código de 6 dígitos por e-mail antes de entrar no app (não em todo login). 28 testes automatizados passando.</span></div>
       </div>
       <div class="status-row">
         <span class="chip done">Vivido</span>
@@ -453,8 +467,12 @@
         <div class="status-body"><b>Mapa / Explorar</b><span>Ligados em <code>api/</code> desde 01/out (EMENDA-004): mostram lugar mockado e lugar real juntos, com DNA calculado nos dois. Falta geolocalização de verdade: sem ela, <code>distanceKm</code> de um lugar real fica neutro, nem perto nem longe.</span></div>
       </div>
       <div class="status-row">
-        <span class="chip partial">Quero viver</span>
-        <div class="status-body"><b>Perfil</b><span>Login e sessão são reais. Editar dados, avatar e preferências ainda não têm backend.</span></div>
+        <span class="chip done">Vivido</span>
+        <div class="status-body"><b>Perfil</b><span>Editar nome/bio/cidade/estado/país já era real desde antes. Completado em 07/out: avatar (preset de emoji, sem upload) e preferência de categoria, os dois persistidos.</span></div>
+      </div>
+      <div class="status-row">
+        <span class="chip done">Vivido</span>
+        <div class="status-body"><b>Salvos (favorito/quero/vivido)</b><span>Concluído em 07/out: tabela <code>SavedPlace</code>, toggle otimista no frontend, funciona pra lugar mockado e real.</span></div>
       </div>
       <div class="status-row">
         <span class="chip none">Ainda não</span>
@@ -478,17 +496,20 @@
       <div class="step done">
         <div><b>Ligar Mapa e Explorar no dado real</b><span>Não foi só trocar a fonte: o motor de recomendação precisava de DNA, que não existia em lugar nenhum pra lugar real. <code>Place</code> ganhou <code>seedTags</code> como ponte temporária (EMENDA-004) até Posts (Fase 5) existir. Validado ponta a ponta: lugar criado via API aparece em Mapa, Explorar, Busca e Detalhe com DNA correto.</span><span class="owner done">Concluído em 01 out</span></div>
       </div>
+      <div class="step done">
+        <div><b>Completar Perfil</b><span>Nome/bio/cidade/estado/país já eram reais desde antes. Faltava avatar (preset de emoji, Storage fica pra Fase 11) e preferência de categoria (<code>preferredCategories</code>, sinal de cold start, não alimenta o DNA ainda). De quebra, corrigido um bug: o merge entre identidade real e perfil mock não repassava campos novos.</span><span class="owner done">Concluído em 07 out</span></div>
+      </div>
+      <div class="step done">
+        <div><b>Salvos simples</b><span>Tabela <code>SavedPlace</code> (favorito/quero/vivido), toggle otimista no frontend. Decisão de propósito: <code>placeId</code> sem FK pro <code>Place</code>, porque a lista mistura lugar mockado e real. Validado: salvar e remover os dois tipos de lugar, sem erro.</span><span class="owner done">Concluído em 07 out</span></div>
+      </div>
+      <div class="step done">
+        <div><b>Cadastrar lugares de verdade</b><span>Tela nova em <code>/lugares/novo</code>, pelo "+" central (virou um menu: publicar experiência ou cadastrar lugar). Nome, categoria, endereço, coordenadas (com atalho de geolocalização), preço, horário e curadoria de DNA, tudo num formulário só. Lugar criado aparece em Mapa/Explorar/Busca na hora, sem recarregar. Validado cadastrando a Padaria Bella Paulista pela própria tela.</span><span class="owner done">Concluído em 07 out</span></div>
+      </div>
       <div class="step next">
-        <div><b>Completar Perfil</b><span>Editar nome, bio, avatar e preferências de categoria.</span></div>
-      </div>
-      <div class="step">
-        <div><b>Salvos simples</b><span>Marcar lugar como "quero ir" / "já fui".</span></div>
-      </div>
-      <div class="step">
-        <div><b>Cadastrar lugares de verdade</b><span>Não existe tela de "cadastrar lugar" no app ainda: hoje só dá pra criar via chamada direta à API. Pra validar a recomendação com um conjunto real (território + categoria específicos, seção 04), ou cadastra via script por enquanto, ou essa tela entra na lista antes deste passo valer a pena.</span></div>
-      </div>
-      <div class="step">
         <div><b>Decisão de hospedagem</b><span>API em Render/Fly/Railway (o container já está pronto pra qualquer uma) e o front em Vercel/Netlify.</span></div>
+      </div>
+      <div class="step blocked">
+        <div><b>Integrar lugares do Google Maps</b><span>Pedido em 10/out, fora do corte original: lugares viriam do Google Places (nearby search, filtrado pro contexto do ROOV) em vez de cadastro manual, que seria removido. Mapa principal viraria um mapa de verdade (hoje é decorativo), com o nome de cada lugar em formato de balão, cinza até o primeiro post e colorido depois. Inclui seletor de lugar por mapa (centrado na localização da pessoa) na tela de criar post.</span><span class="owner blocked">Bloqueado: falta conta Google Cloud com faturamento</span></div>
       </div>
     </div>
   </section>
@@ -543,6 +564,8 @@
           <li><code>npm install</code> + <code>npm run dev</code> dentro de cada pasta</li>
           <li>Banco: Postgres gerenciado no Supabase (região São Paulo), connection string em <code>api/.env</code></li>
           <li>Ver <code>README.md</code> na raiz do repositório</li>
+          <li>O banco pausa sozinho por inatividade (free tier). Reativa abrindo o projeto no painel do Supabase (~1 min); nunca rodar <code>prisma migrate dev</code> nesse estado</li>
+          <li>Sem <code>RESEND_API_KEY</code> no <code>api/.env</code>, o código de verificação só é logado no servidor (modo dev). Pra enviar de verdade: conta grátis em resend.com</li>
         </ul>
       </div>
       <div class="tech-block">
@@ -561,6 +584,9 @@
           <li>Erro sempre vira <code>AppException</code></li>
           <li>Motor de recomendação com implementação única, em <code>web/src/engine/</code>, até o backend precisar dele de verdade</li>
           <li><code>seedTags</code> no <code>Place</code> é ponte temporária (EMENDA-004), não o desenho final do DNA</li>
+          <li>Avatar é preset de emoji, não upload. <code>preferredCategories</code> é preferência declarada, não entra no DNA do usuário ainda</li>
+          <li><code>SavedPlace.placeId</code> é texto solto, sem FK pro <code>Place</code> (mesmo raciocínio do <code>seedTags</code>/EMENDA-004)</li>
+          <li>Verificação de e-mail é só no cadastro, não em todo login. SHA-256 no código (não Argon2): quem barra força bruta é o limite de tentativas, não o custo do hash</li>
         </ul>
       </div>
     </div>

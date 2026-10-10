@@ -1,7 +1,9 @@
 # ROOV: Documento de Produto
 
-**Data:** 01/out/2026
+**Data:** 01/out/2026 (última atualização: 10/out/2026)
 **Status:** rascunho para validar entre os sócios antes de travar o plano do mês.
+**Projeto pausado em 10/out/2026**, retomar quando a conta do Google Cloud
+existir (ver passo 7 da seção 3).
 
 Este documento tem 5 partes: o que entra no MVP, o que já está pronto, o que
 ainda falta (com os próximos passos concretos), pontos estratégicos a
@@ -54,11 +56,12 @@ que está desenhado na tela.
 
 | Área | Status | Nota |
 | --- | --- | --- |
-| Autenticação | 🟢 Vivido | Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. 20 testes automatizados passando |
+| Autenticação | 🟢 Vivido | Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. Desde 07/out, cadastro aceita localização opcional e exige confirmar um código de 6 dígitos por e-mail antes de entrar no app (não em todo login). 28 testes automatizados passando |
 | Lugares (backend) | 🟡 Quero viver | CRUD existe (criar, atualizar, consultar, categorias, horário), mas ainda não confirmado se cobre tudo que o front vai precisar |
 | Motor de recomendação (DNA, pesos, contexto, agenda) | 🟡 Quero viver | Roda sobre mock + lugar real (seedTags, EMENDA-004) desde 01/out. Ainda não viu sinal de uso de verdade (Posts, Fase 5) |
 | Mapa / Explorar (frontend) | 🟢 Vivido | Ligados em `api/` desde 01/out (EMENDA-004); mostram mock + lugar real juntos. Falta geolocalização de verdade (`distanceKm` é neutro pra lugar real) |
-| Perfil (frontend + backend) | 🟡 Quero viver | Login/logout funcionam de verdade; editar perfil, avatar e preferências ainda não têm backend |
+| Perfil (frontend + backend) | 🟢 Vivido | Editar nome/bio/cidade/estado/país já era real desde antes (achado em 07/out, o status aqui estava desatualizado). Completado em 07/out: avatar (preset de emoji, sem upload) e preferência de categoria, ambos persistidos |
+| Salvos (favorito/quero/vivido) | 🟢 Vivido | Concluído em 07/out: tabela `SavedPlace`, toggle otimista no frontend, funciona pra lugar mockado e real (`placeId` sem FK, de propósito) |
 | Feed, Comunidades, Agenda avançada | ⚪ Ainda não | Telas existem (bonitas, navegáveis), mas 100% sobre dado inventado. Nenhuma dessas três tem uma linha de backend |
 | Infraestrutura | 🟢 Vivido | Estrutura do projeto organizada, testes automatizados no backend, hospedagem decidida (Postgres gerenciado, sem Docker) |
 
@@ -88,18 +91,49 @@ Em ordem: cada passo depende do anterior.
    vindos da `api/`; Feed/Comunidades continuam só mockados (dependem de
    Posts, fora do corte). Validado ponta a ponta: lugar criado via API
    aparece em Mapa/Explorar/Busca/Detalhe com DNA correto.
-3. **Completar Perfil.** Editar nome/bio/avatar, preferências de categoria.
+3. ~~**Completar Perfil.**~~ **Concluído em 07/out.** Nome/bio/cidade/estado/
+   país já eram reais desde antes (o status da seção 2 estava desatualizado
+   nesse ponto). O que faltava de fato: avatar (preset de emoji, decisão
+   registrada de não fazer upload real ainda, Storage é Fase 11) e
+   preferência de categoria declarada (`preferredCategories` no `User`,
+   sinal de cold start, não alimenta o DNA ainda). De quebra, achado um bug:
+   o merge entre identidade real e perfil mock em `RoovProvider` usava uma
+   lista explícita de campos que não incluía os novos, corrigido junto.
    Fecha a Fase 3 do roadmap.
-4. **Salvos simples.** Marcar lugar como "quero ir"/"já fui": a versão sem
-   calendário da Fase 9.
-5. **Cadastrar lugares de verdade.** Não existe tela de "cadastrar lugar" no
-   frontend ainda: hoje só dá pra criar lugar via chamada direta à API. Pra
-   validar a recomendação com um conjunto real (território + categoria
-   específicos, ponto da seção 4), ou se cadastra via script/API por enquanto,
-   ou essa tela entra na lista antes do passo 5 valer a pena de verdade.
+4. ~~**Salvos simples.**~~ **Concluído em 07/out.** Tabela nova `SavedPlace`
+   (favorito/quero/vivido, mesmos três tipos que a UI já tinha), com uma
+   decisão de propósito: `placeId` é texto solto, sem FK pro `Place`, porque
+   a lista mistura lugar mockado e real, e metade ficar sem poder salvar
+   seria pior que perder integridade referencial. Toggle otimista no
+   frontend (aplica local na hora, desfaz se a API falhar). Validado: salvar
+   e remover lugar real e lugar mockado, os dois persistem/removem certo.
+5. ~~**Cadastrar lugares de verdade.**~~ **Concluído em 07/out.** Tela nova
+   em `/lugares/novo`, acessível pelo "+" central (que virou um menu com
+   duas opções: publicar experiência ou cadastrar lugar). Cobre nome,
+   categoria, tipo, endereço, coordenadas (com atalho de geolocalização do
+   navegador), faixa de preço, horário e a curadoria de `seedTags` (opcional,
+   mesmos 4 grupos do DNA). Lugar criado aparece em Mapa/Explorar/Busca na
+   hora, sem recarregar a página. Validado ponta a ponta: cadastrei a
+   Padaria Bella Paulista pela própria tela, foi pro ar com DNA correto.
+   Antes de hoje, só havia os 6 lugares cadastrados via script; agora são 7,
+   e o self-service é real. Falta só upload de foto (Storage, Fase 11).
 6. **Decisão de hospedagem da API e do front**, depois do MVP rodando local
    (Render/Fly/Railway para a API, o `Dockerfile` já existe pronto pra
    qualquer uma; Vercel/Netlify para o front).
+7. **🔴 Bloqueado: integrar lugares do Google Maps.** Pedido em 10/out, fora
+   do corte original: lugares passariam a vir do Google Places (nearby
+   search, filtrado pro que faz sentido no ROOV) em vez de cadastro manual,
+   que seria removido. O mapa principal passaria a ser um mapa de verdade
+   (hoje é decorativo, sem biblioteca nenhuma por trás), com o nome de cada
+   lugar em formato de balão, cinza até o primeiro post e colorido depois.
+   Inclui também um seletor de lugar por mapa (centrado na localização da
+   pessoa) na tela de criar post, pra quando o lugar ainda não tem post.
+   **Trancado por falta de uma conta no Google Cloud com faturamento
+   ativado** (Maps JavaScript API + Places API exigem isso mesmo dentro do
+   crédito gratuito de $200/mês): ninguém além do Gabriel pode criar essa
+   conta. Retomar quando a conta existir. Enquanto isso, o cadastro manual
+   de lugares (passo 5) continua sendo o único caminho pra lugar novo entrar
+   no catálogo, e os 7 lugares já cadastrados ficam como estão.
 
 Depois desses 6 passos, o corte do MVP (seção 1) está de pé. A partir daí, a
 ordem de construção do que "fica como melhoria" volta a seguir o
@@ -169,6 +203,22 @@ conversa de produto.*
 Ver `README.md` na raiz (resumo: `npm install` e `npm run dev` dentro de
 cada pasta, Postgres gerenciado, sem Docker necessário).
 
+**O banco pausa sozinho por inatividade** (free tier do Supabase, visto na
+prática em 07/out depois de alguns dias sem uso): a API falha com
+`tenant/user not found`. Reativa abrindo o projeto no painel do Supabase
+(status "Coming up...", leva cerca de 1 minuto); nunca rodar
+`prisma migrate dev` nesse estado, ele detecta isso como "drift" e oferece
+resetar o schema inteiro. Usar `prisma db execute` com uma migration escrita
+à mão + `prisma migrate resolve --applied` pra aplicar mudança de schema sem
+cair nesse fluxo.
+
+**Pra ativar envio de e-mail de verdade:** sem `RESEND_API_KEY`, o código de
+verificação do cadastro só é logado no servidor (modo dev, API sobe normal).
+Pra enviar de verdade: criar conta grátis em resend.com, gerar uma chave em
+API Keys, colar em `RESEND_API_KEY` no `api/.env`. `RESEND_FROM_EMAIL` já
+vem com o domínio de teste do Resend (`onboarding@resend.dev`), que funciona
+sem verificar domínio próprio.
+
 ### Como testar
 
 A API já tem suíte de testes automatizados (Jest) cobrindo autenticação:
@@ -185,13 +235,12 @@ suíte de testes; decisão a tomar quando ele parar de ser só mock.
 3. No frontend, `services/index.js` hoje decide mock vs. real por módulo:
    trocar places para real é mudar essa decisão num lugar só, sem tocar em
    `engine/` nem nos componentes.
-4. Módulo de perfil na API (`users.controller.ts` já existe, falta o PATCH
-   de edição e o campo de avatar: decidir se avatar é upload real (precisa
-   de Storage, puxa a Fase 11 pra frente) ou uma lista de ícones prontos
-   pra começar).
-5. Tabela nova (`saved_places` ou equivalente) + endpoints de
-   criar/listar/remover: reaproveita os mesmos `AppException`, guards e
-   padrão de resposta já estabelecidos.
+4. ~~Módulo de perfil na API~~ **Concluído em 07/out:** decidido avatar como
+   preset de emoji (não upload, Storage fica pra Fase 11), e
+   `preferredCategories` como preferência declarada no `User`.
+5. ~~Tabela nova (`saved_places`)~~ **Concluído em 07/out:** `SavedPlace`
+   (favorito/quero/vivido), endpoints de criar/listar/remover, `placeId`
+   sem FK de propósito.
 
 ### Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -203,6 +252,17 @@ suíte de testes; decisão a tomar quando ele parar de ser só mock.
   `web/src/engine/` até o dia em que o backend precisar dele de verdade
   (`EMENDA-003`); não construir um pacote compartilhado antes disso
   acontecer.
+- Avatar é preset de emoji, não upload de arquivo. `preferredCategories` é
+  preferência declarada, não entra em `buildUserDna`. Reabrir só quando
+  Storage (Fase 11) ou Posts (Fase 5) chegarem de verdade.
+- `SavedPlace.placeId` é texto solto, sem FK pro `Place` (mesmo raciocínio
+  do `seedTags`/EMENDA-004: a lista mistura mock e real). Reabrir só quando
+  o mock de lugares sair de cena de vez.
+- Código de verificação de e-mail é só no cadastro, não em todo login
+  (decisão registrada em 07/out). SHA-256, não Argon2: quem impede força
+  bruta é o limite de tentativas (`VERIFICATION_MAX_ATTEMPTS`), não o custo
+  do hash. Envio é best-effort: falha não derruba o cadastro, só fica sem
+  código até o usuário pedir reenvio.
 
 Lista completa de invariantes: `README.md`, seção "Invariantes da
 arquitetura".
