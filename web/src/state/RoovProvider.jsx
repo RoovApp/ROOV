@@ -14,9 +14,33 @@ import {
   postsService,
   usersService,
 } from '../services/index.js';
+import { savedPlacesService } from '../services/savedPlaces.js';
+import { loadSession } from '../services/auth.js';
 import { buildMomentDna } from '../engine/moment.js';
 import { buildUserDna } from '../engine/dna.js';
 import { EMPTY_FILTERS } from '../domain/taxonomy.js';
+
+/**
+ * Salvos reais da API, mapeados pro mesmo formato de `state.library`
+ * (`{ placeId, kind, addedAt }`). Nunca derruba a hidratação: se a API
+ * falhar, a UI segue só com os salvos mockados, igual `fetchRealPlaces` em
+ * `services/index.js`.
+ */
+async function fetchRealLibraryEntries() {
+  const session = loadSession();
+  if (!session) return [];
+  try {
+    const saved = await savedPlacesService.list(session.accessToken);
+    return saved.map((entry) => ({
+      placeId: entry.placeId,
+      kind: entry.kind,
+      addedAt: entry.createdAt,
+    }));
+  } catch (err) {
+    console.warn('[roov] Salvos reais indisponíveis, seguindo só com o mock.', err);
+    return [];
+  }
+}
 
 const RoovContext = createContext(null);
 
@@ -137,6 +161,9 @@ function reducer(state, action) {
       return { ...state, posts: [action.post, ...state.posts], places };
     }
 
+    case 'addPlace':
+      return { ...state, places: [...state.places, action.place] };
+
     case 'toast':
       return { ...state, toast: action.toast };
 
@@ -160,8 +187,20 @@ export function RoovProvider({ children, authUser }) {
       libraryService.entries(),
       libraryService.collections(),
       libraryService.agenda(),
+      fetchRealLibraryEntries(),
     ]).then(
-      ([user, profile, searchHistory, places, posts, communities, library, collections, agenda]) => {
+      ([
+        user,
+        profile,
+        searchHistory,
+        places,
+        posts,
+        communities,
+        mockLibrary,
+        collections,
+        agenda,
+        realLibrary,
+      ]) => {
         if (cancelled) return;
         dispatch({
           type: 'hydrate',
@@ -172,7 +211,7 @@ export function RoovProvider({ children, authUser }) {
             places,
             posts,
             communities,
-            library,
+            library: [...mockLibrary, ...realLibrary],
             collections,
             agenda,
           },
@@ -262,10 +301,30 @@ export function RoovProvider({ children, authUser }) {
         dispatch({ type: 'setFilters', filters: { ...state.filters, ...patch } }),
       resetFilters: () => dispatch({ type: 'resetFilters' }),
 
-      toggleLibrary: (placeId, kind, label) => {
+      /**
+       * Otimista: aplica local na hora (a UI nunca espera a rede pra reagir
+       * ao toque) e persiste em paralelo. Numa falha, desfaz exatamente com
+       * o mesmo dispatch de novo — o reducer é um toggle puro, então chamar
+       * duas vezes volta ao estado anterior.
+       */
+      toggleLibrary: async (placeId, kind, label) => {
         const had = library.has(placeId, kind);
         dispatch({ type: 'toggleLibrary', placeId, kind });
         toast(had ? `Removido de ${label}` : `Salvo em ${label}`);
+
+        const session = loadSession();
+        if (!session) return;
+        try {
+          if (had) {
+            await savedPlacesService.remove(session.accessToken, placeId, kind);
+          } else {
+            await savedPlacesService.create(session.accessToken, { placeId, kind });
+          }
+        } catch (err) {
+          console.warn('[roov] Não foi possível salvar essa mudança, desfazendo.', err);
+          dispatch({ type: 'toggleLibrary', placeId, kind });
+          toast('Não foi possível salvar. Tente de novo.');
+        }
       },
 
       createCollection: (collection) => {
@@ -301,6 +360,14 @@ export function RoovProvider({ children, authUser }) {
         return post;
       },
 
+      /** Cadastro de lugar real (Cap. 22, passo 5) — ver `placesService.create`. */
+      createPlace: async (input) => {
+        const place = await placesService.create(input);
+        dispatch({ type: 'addPlace', place });
+        toast(`${place.name} cadastrado`);
+        return place;
+      },
+
       toast,
     }),
     [library, state.filters, toast],
@@ -325,6 +392,7 @@ export function RoovProvider({ children, authUser }) {
             city: authUser.city,
             state: authUser.state,
             country: authUser.country,
+            preferredCategories: authUser.preferredCategories,
           }
         : state.user,
     [state.user, authUser],

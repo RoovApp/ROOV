@@ -1,9 +1,28 @@
 import { useState } from 'react';
-import { AtSign, Lock, Mail, User } from 'lucide-react';
+import { AtSign, LocateFixed, Lock, Mail, MapPin, User } from 'lucide-react';
 import { PrimaryButton, GhostButton } from '../../components/ui/primitives.jsx';
 import { useAuth } from '../../state/AuthProvider.jsx';
 
 const USERNAME_PATTERN = /^[a-z0-9_]+$/;
+
+/**
+ * Nominatim (OpenStreetMap) — de graça, sem chave, mas uso leve: só quando a
+ * pessoa toca em "usar minha localização" no cadastro, nunca em segundo
+ * plano. Se falhar, as coordenadas continuam válidas; só não preenchemos os
+ * campos de texto automaticamente, a pessoa digita à mão.
+ */
+async function reverseGeocode(latitude, longitude) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`;
+  const response = await fetch(url, { headers: { 'Accept-Language': 'pt-BR' } });
+  if (!response.ok) throw new Error('Não foi possível identificar sua localização.');
+  const data = await response.json();
+  const address = data.address ?? {};
+  return {
+    city: address.city ?? address.town ?? address.village ?? address.municipality ?? '',
+    state: address.state ?? '',
+    country: address.country ?? '',
+  };
+}
 
 export function RegisterForm({ onSwitchToLogin }) {
   const { register } = useAuth();
@@ -11,8 +30,37 @@ export function RegisterForm({ onSwitchToLogin }) {
   const [username, setUsername] = useState('');
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [country, setCountry] = useState('');
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+
+  function useMyLocation() {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    setError(null);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const place = await reverseGeocode(
+            position.coords.latitude,
+            position.coords.longitude,
+          );
+          setCity(place.city);
+          setState(place.state);
+          setCountry(place.country);
+        } catch (err) {
+          setError(err.message ?? 'Não foi possível identificar sua localização.');
+        } finally {
+          setLocating(false);
+        }
+      },
+      () => setLocating(false),
+      { timeout: 8000 },
+    );
+  }
 
   // Validação leve no cliente, só para feedback rápido — a regra oficial é
   // a mesma do backend (RegisterDto) e quem decide de fato é a resposta da API.
@@ -32,7 +80,15 @@ export function RegisterForm({ onSwitchToLogin }) {
     setSubmitting(true);
     setError(null);
     try {
-      await register({ email: email.trim(), username, name: name.trim(), password });
+      await register({
+        email: email.trim(),
+        username,
+        name: name.trim(),
+        password,
+        ...(city.trim() && { city: city.trim() }),
+        ...(state.trim() && { state: state.trim() }),
+        ...(country.trim() && { country: country.trim() }),
+      });
     } catch (err) {
       setError(err.message ?? 'Não foi possível criar sua conta. Tente novamente.');
     } finally {
@@ -110,6 +166,50 @@ export function RegisterForm({ onSwitchToLogin }) {
           />
         </div>
       </label>
+
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="text-sm font-semibold">Localização (opcional)</span>
+          <button
+            type="button"
+            onClick={useMyLocation}
+            disabled={locating}
+            className="flex items-center gap-1 text-[11px] text-[var(--muted-foreground)] underline underline-offset-2"
+          >
+            <LocateFixed className="h-3 w-3" />
+            {locating ? 'Localizando…' : 'Usar minha localização'}
+          </button>
+        </div>
+        <div className="glass flex h-11 items-center gap-2.5 rounded-full px-4">
+          <MapPin className="h-4 w-4 shrink-0 text-[var(--muted-foreground)]" />
+          <input
+            type="text"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            placeholder="Cidade"
+            className="w-full bg-transparent text-sm outline-none placeholder:text-[var(--muted-foreground)]"
+          />
+        </div>
+        <div className="mt-2 flex gap-2">
+          <input
+            type="text"
+            value={state}
+            onChange={(e) => setState(e.target.value)}
+            placeholder="Estado"
+            className="glass h-11 flex-1 rounded-full px-4 text-sm outline-none placeholder:text-[var(--muted-foreground)]"
+          />
+          <input
+            type="text"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            placeholder="País"
+            className="glass h-11 flex-1 rounded-full px-4 text-sm outline-none placeholder:text-[var(--muted-foreground)]"
+          />
+        </div>
+        <span className="mt-1 block px-1 text-[11px] text-[var(--muted-foreground)]">
+          Ajuda a personalizar recomendações perto de você. Dá pra editar depois.
+        </span>
+      </div>
 
       <PrimaryButton type="submit" disabled={!canSubmit} className="mt-2">
         {submitting ? 'Criando conta…' : 'Criar conta'}

@@ -39,7 +39,9 @@ export function AuthProvider({ children }) {
         if (cancelled) return;
         saveSession(fresh);
         setUser(fresh.user);
-        setStatus('authenticated');
+        // Recarregar a página no meio da verificação não deve pular a
+        // etapa: o portão continua valendo até o código ser confirmado.
+        setStatus(fresh.user.emailVerified ? 'authenticated' : 'verifying');
       })
       .catch(() => {
         if (cancelled) return;
@@ -52,12 +54,32 @@ export function AuthProvider({ children }) {
     };
   }, []);
 
+  /**
+   * Cadastro + verificação de e-mail por código (no cadastro, não em todo
+   * login — decisão registrada). A conta já existe e já tem sessão nesse
+   * ponto (`authService.register` devolve sessão completa); `status:
+   * 'verifying'` só segura a entrada no app até o código ser confirmado.
+   */
   const register = useCallback(async (data) => {
     const session = await authService.register(data);
     saveSession(session);
     setUser(session.user);
     setNotice(null);
+    setStatus(session.user.emailVerified ? 'authenticated' : 'verifying');
+  }, []);
+
+  const verifyEmail = useCallback(async (code) => {
+    const session = loadSession();
+    const updated = await authService.verifyEmail(session.accessToken, code);
+    saveSession({ ...session, user: updated });
+    setUser(updated);
     setStatus('authenticated');
+    return updated;
+  }, []);
+
+  const resendVerification = useCallback(async () => {
+    const session = loadSession();
+    await authService.resendVerification(session.accessToken);
   }, []);
 
   const login = useCallback(async (data) => {
@@ -109,8 +131,30 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ status, user, notice, register, login, logout, updateProfile, changePassword }),
-    [status, user, notice, register, login, logout, updateProfile, changePassword],
+    () => ({
+      status,
+      user,
+      notice,
+      register,
+      login,
+      logout,
+      updateProfile,
+      changePassword,
+      verifyEmail,
+      resendVerification,
+    }),
+    [
+      status,
+      user,
+      notice,
+      register,
+      login,
+      logout,
+      updateProfile,
+      changePassword,
+      verifyEmail,
+      resendVerification,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

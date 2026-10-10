@@ -6,10 +6,12 @@
  * pesquisa escondem a barra: são navegação secundária, não destino.
  */
 
+import { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { Bookmark, Map, Plus, User, Users } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Bookmark, MapPin, Map, Plus, Sparkles, User, Users } from 'lucide-react';
 import { useRoov } from '../state/RoovProvider.jsx';
-import { Toast } from './ui/primitives.jsx';
+import { Sheet, Toast } from './ui/primitives.jsx';
 
 const TABS = [
   { to: '/', label: 'Mapa', icon: Map, end: true },
@@ -19,12 +21,13 @@ const TABS = [
 ];
 
 /** Rotas onde a barra inferior não aparece. */
-const FULLSCREEN_PREFIXES = ['/lugar/', '/comunidade/', '/buscar', '/criar'];
+const FULLSCREEN_PREFIXES = ['/lugar/', '/comunidade/', '/buscar', '/criar', '/lugares/novo'];
 
 export function AppShell({ children }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { toast } = useRoov();
+  const [createMenuOpen, setCreateMenuOpen] = useState(false);
 
   const hideNav = FULLSCREEN_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
@@ -33,21 +36,27 @@ export function AppShell({ children }) {
       <main className="scrollbar-hide flex-1 overflow-y-auto">{children}</main>
 
       {!hideNav && (
-        <nav className="absolute inset-x-0 bottom-0 z-50 border-t border-white/10 bg-white/[0.03] backdrop-blur-xl">
-          <div className="flex items-end justify-around px-2 pb-5 pt-2">
+        <nav
+          className="absolute inset-x-0 bottom-0 z-50 flex justify-center px-4 pb-[calc(env(safe-area-inset-bottom,0px)+14px)]"
+          aria-label="Navegação principal"
+        >
+          <div className="glass-surface flex items-center gap-1 rounded-full px-2 py-2">
             {TABS.slice(0, 2).map((tab) => (
               <TabLink key={tab.to} tab={tab} />
             ))}
 
             <button
               type="button"
-              aria-label="Criar experiência"
-              onClick={() => navigate('/criar')}
-              className="-mt-7 flex flex-col items-center"
+              aria-label="Criar"
+              onClick={() => setCreateMenuOpen(true)}
+              className="relative -mt-6 flex flex-col items-center px-1"
             >
-              <span className="roov-gradient flex h-14 w-14 items-center justify-center rounded-full shadow-lg shadow-black/50 transition active:scale-95">
-                <Plus className="h-6 w-6 text-white" />
-              </span>
+              <motion.span
+                whileTap={{ scale: 0.88 }}
+                className="glass-fab flex h-14 w-14 items-center justify-center rounded-full"
+              >
+                <Plus className="relative z-10 h-6 w-6 text-white" />
+              </motion.span>
             </button>
 
             {TABS.slice(2).map((tab) => (
@@ -58,6 +67,53 @@ export function AppShell({ children }) {
       )}
 
       <Toast toast={toast} />
+
+      <Sheet
+        open={createMenuOpen}
+        onClose={() => setCreateMenuOpen(false)}
+        title="Criar"
+        subtitle="O que você quer fazer?"
+      >
+        <div className="space-y-2 pb-2">
+          <button
+            type="button"
+            onClick={() => {
+              setCreateMenuOpen(false);
+              navigate('/criar');
+            }}
+            className="glass flex w-full items-center gap-3 rounded-2xl p-3.5 text-left"
+          >
+            <span className="roov-gradient flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+              <Sparkles className="h-4.5 w-4.5 text-white" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold">Publicar experiência</span>
+              <span className="block text-xs text-[var(--muted-foreground)]">
+                Conte como foi num lugar que você já conhece
+              </span>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setCreateMenuOpen(false);
+              navigate('/lugares/novo');
+            }}
+            className="glass flex w-full items-center gap-3 rounded-2xl p-3.5 text-left"
+          >
+            <span className="roov-gradient flex h-10 w-10 shrink-0 items-center justify-center rounded-full">
+              <MapPin className="h-4.5 w-4.5 text-white" />
+            </span>
+            <span>
+              <span className="block text-sm font-semibold">Cadastrar lugar</span>
+              <span className="block text-xs text-[var(--muted-foreground)]">
+                Adicione um lugar novo ao catálogo do ROOV
+              </span>
+            </span>
+          </button>
+        </div>
+      </Sheet>
     </div>
   );
 }
@@ -68,14 +124,40 @@ function TabLink({ tab }) {
     <NavLink
       to={tab.to}
       end={tab.end}
-      className={({ isActive }) =>
-        `flex min-w-[62px] flex-col items-center gap-1 py-1 transition ${
-          isActive ? 'text-white' : 'text-[var(--muted-foreground)]'
-        }`
-      }
+      aria-label={tab.label}
+      className="relative flex min-w-[56px] flex-col items-center gap-1 px-1 py-1"
     >
-      <Icon className="h-[22px] w-[22px]" />
-      <span className="text-[10px]">{tab.label}</span>
+      {({ isActive }) => (
+        <>
+          <motion.span className="relative flex h-9 w-11 items-center justify-center" whileTap={{ scale: 0.85 }}>
+            {isActive && (
+              <motion.span
+                layoutId="roov-nav-active-pill"
+                className="glass-pill-active absolute inset-0 rounded-full"
+                transition={{ type: 'spring', stiffness: 480, damping: 32 }}
+              />
+            )}
+            <motion.span
+              animate={{ scale: isActive ? 1.08 : 1 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+              className="relative z-10 flex items-center justify-center"
+            >
+              <Icon
+                size={20}
+                strokeWidth={isActive ? 2.3 : 1.8}
+                className={isActive ? 'text-white' : 'text-[var(--muted-foreground)]'}
+              />
+            </motion.span>
+          </motion.span>
+          <span
+            className={`text-[10px] font-semibold transition-colors ${
+              isActive ? 'text-white' : 'text-[var(--muted-foreground)]'
+            }`}
+          >
+            {tab.label}
+          </span>
+        </>
+      )}
     </NavLink>
   );
 }

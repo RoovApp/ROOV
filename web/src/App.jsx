@@ -13,12 +13,14 @@ import { PlaceActionsProvider } from './components/PlaceActions.jsx';
 import { AppShell } from './components/AppShell.jsx';
 import { SplashScreen } from './modules/onboarding/SplashScreen.jsx';
 import { AuthModule } from './modules/onboarding/AuthModule.jsx';
+import { VerifyEmailModule } from './modules/onboarding/VerifyEmailModule.jsx';
 import { DiscoveryModule } from './modules/discovery/DiscoveryModule.jsx';
 import { CommunitiesModule } from './modules/communities/CommunitiesModule.jsx';
 import { CommunityDetailModule } from './modules/communities/CommunityDetailModule.jsx';
 import { SavedModule } from './modules/saved/SavedModule.jsx';
 import { ProfileModule } from './modules/profile/ProfileModule.jsx';
 import { PlaceDetailModule } from './modules/place/PlaceDetailModule.jsx';
+import { CreatePlaceModule } from './modules/place/CreatePlaceModule.jsx';
 import { SearchModule } from './modules/search/SearchModule.jsx';
 import { CreateModule } from './modules/create/CreateModule.jsx';
 
@@ -60,6 +62,19 @@ function AuthGate() {
     );
   }
 
+  /**
+   * Verificação de e-mail do cadastro (não a cada login — decisão
+   * registrada). A conta e a sessão já existem; isto só segura a entrada
+   * no resto do app até o código ser confirmado.
+   */
+  if (status === 'verifying') {
+    return (
+      <div className="mx-auto h-full w-full max-w-md">
+        <VerifyEmailModule />
+      </div>
+    );
+  }
+
   return (
     <RoovProvider authUser={user}>
       <PlaceActionsProvider>
@@ -71,6 +86,7 @@ function AuthGate() {
             <Route path="/salvos" element={<SavedModule />} />
             <Route path="/perfil" element={<ProfileModule />} />
             <Route path="/lugar/:id" element={<PlaceDetailModule />} />
+            <Route path="/lugares/novo" element={<CreatePlaceModule />} />
             <Route path="/buscar" element={<SearchModule />} />
             <Route path="/criar" element={<CreateModule />} />
             <Route path="*" element={<Navigate to="/" replace />} />

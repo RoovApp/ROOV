@@ -10,11 +10,15 @@ import { useMemo, useState } from 'react';
 import { LogOut, Pencil, Settings } from 'lucide-react';
 import { PlaceCard } from '../../components/PlaceCard.jsx';
 import { PostCard } from '../../components/PostCard.jsx';
-import { EmptyState, SegmentedTabs } from '../../components/ui/primitives.jsx';
+import { EmptyState, SegmentedTabs, Tag } from '../../components/ui/primitives.jsx';
+import { CATEGORY_BY_ID } from '../../domain/taxonomy.js';
 import { useRoov } from '../../state/RoovProvider.jsx';
 import { useAuth } from '../../state/AuthProvider.jsx';
 import { EditProfileSheet } from './EditProfileSheet.jsx';
 import { SettingsSheet } from './SettingsSheet.jsx';
+
+/** Preset de emoji (ver EditProfileSheet) nunca é uma URL — distingue sem precisar de campo à parte. */
+const isAvatarUrl = (avatar) => /^https?:\/\//.test(avatar ?? '');
 
 const TABS = [
   { id: 'posts', label: 'Posts' },
@@ -75,7 +79,7 @@ export function ProfileModule() {
 
       <div className="space-y-6 px-4">
         <section className="flex items-center gap-4">
-          {user.avatar ? (
+          {isAvatarUrl(user.avatar) ? (
             <img
               src={user.avatar}
               alt={user.name}
@@ -86,7 +90,7 @@ export function ProfileModule() {
               aria-label={user.name}
               className="roov-gradient flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-2 border-[#8B5CFF] text-2xl font-semibold text-white"
             >
-              {user.name?.trim()?.[0]?.toUpperCase() ?? '?'}
+              {user.avatar || user.name?.trim()?.[0]?.toUpperCase() || '?'}
             </div>
           )}
           <div className="min-w-0 flex-1">
@@ -96,6 +100,15 @@ export function ProfileModule() {
               <p className="mt-1 text-xs text-[var(--muted-foreground)]">
                 {[user.city, user.state].filter(Boolean).join(' — ')}
               </p>
+            )}
+            {user.preferredCategories?.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {user.preferredCategories.map((id) => (
+                  <Tag key={id} color={CATEGORY_BY_ID[id]?.hex}>
+                    {CATEGORY_BY_ID[id]?.short ?? id}
+                  </Tag>
+                ))}
+              </div>
             )}
           </div>
         </section>

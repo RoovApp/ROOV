@@ -65,4 +65,17 @@ export const authService = {
   async changePassword(accessToken, data) {
     return apiRequest('/auth/change-password', { method: 'POST', body: data, accessToken });
   },
+
+  /**
+   * @param {string} accessToken
+   * @param {string} code
+   */
+  async verifyEmail(accessToken, code) {
+    return apiRequest('/auth/verify-email', { method: 'POST', body: { code }, accessToken });
+  },
+
+  /** @param {string} accessToken */
+  async resendVerification(accessToken) {
+    return apiRequest('/auth/resend-verification', { method: 'POST', accessToken });
+  },
 };

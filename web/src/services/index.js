@@ -21,7 +21,7 @@ import {
 } from './mock/social.js';
 import { buildPlaceDna } from '../engine/dna.js';
 import { TAG_GROUPS } from '../domain/taxonomy.js';
-import { apiRequestPage } from './apiClient.js';
+import { apiRequest, apiRequestPage } from './apiClient.js';
 import { loadSession } from './auth.js';
 
 const GROUP_OF_TAG = (() => {
@@ -71,6 +71,27 @@ function consolidateDna(place, posts) {
 
 const PLACES_PAGE_LIMIT = 50;
 
+/** Formato cru da API (`latitude`/`longitude`) para o formato que o resto do app espera (`coords`). */
+function mapApiPlace(place) {
+  return {
+    id: place.id,
+    name: place.name,
+    category: place.category,
+    placeType: place.placeType,
+    neighborhood: place.neighborhood,
+    city: place.city,
+    state: place.state,
+    country: place.country,
+    coords: { lat: place.latitude, lng: place.longitude },
+    photos: place.photos,
+    priceRange: place.priceRange,
+    hours: place.hours,
+    status: place.status,
+    createdAt: place.createdAt,
+    seedTags: place.seedTags ?? undefined,
+  };
+}
+
 /**
  * Lugares reais, cadastrados via `api/`. `seedTags` é a ponte temporária até
  * Posts existir de verdade — ver `docs/EMENDA-004-SEED-TAGS-NO-PLACE.md` no
@@ -98,23 +119,7 @@ async function fetchRealPlaces() {
       cursor = meta.nextCursor;
     }
 
-    return places.map((place) => ({
-      id: place.id,
-      name: place.name,
-      category: place.category,
-      placeType: place.placeType,
-      neighborhood: place.neighborhood,
-      city: place.city,
-      state: place.state,
-      country: place.country,
-      coords: { lat: place.latitude, lng: place.longitude },
-      photos: place.photos,
-      priceRange: place.priceRange,
-      hours: place.hours,
-      status: place.status,
-      createdAt: place.createdAt,
-      seedTags: place.seedTags ?? undefined,
-    }));
+    return places.map(mapApiPlace);
   } catch (err) {
     console.warn('[roov] Lugares reais indisponíveis, seguindo só com o mock.', err);
     return [];
@@ -186,6 +191,31 @@ export const placesService = {
   async byIds(ids) {
     const db = await getDb();
     return delay(ids.map((id) => db.placeById[id]).filter(Boolean));
+  },
+  /**
+   * Cadastra um lugar real (Cap. 22, passo 5). Sem rascunho: cria direto na
+   * `api/` e insere no índice já resolvido, pra aparecer em Mapa/Explorar/
+   * Busca sem precisar recarregar a página.
+   */
+  async create(input) {
+    const session = loadSession();
+    if (!session) throw new Error('Você precisa estar logado para cadastrar um lugar.');
+
+    const created = await apiRequest('/places', {
+      method: 'POST',
+      body: input,
+      accessToken: session.accessToken,
+    });
+
+    const raw = mapApiPlace(created);
+    const { seedTags, ...rest } = raw;
+    const place = { ...rest, dna: consolidateDna(raw, []), postsCount: 0 };
+
+    const db = await getDb();
+    db.places = [...db.places, place];
+    db.placeById[place.id] = place;
+
+    return place;
   },
   /** Lugares com DNA parecido — usado no "experiências similares" do detalhe. */
   async similarTo(id, limit = 4) {
