@@ -6,6 +6,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { AppConfigModule } from './config/app-config.module';
 import { AppConfigService } from './config/app-config.service';
 import { PrismaModule } from './infra/prisma/prisma.module';
+import { MailModule } from './infra/mail/mail.module';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { HealthModule } from './modules/health/health.module';
@@ -13,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { UsersModule } from './modules/users/users.module';
 import { PlacesModule } from './modules/places/places.module';
+import { SavedPlacesModule } from './modules/saved-places/saved-places.module';
 
 /**
  * Módulo raiz.
@@ -79,12 +81,14 @@ import { PlacesModule } from './modules/places/places.module';
     }),
 
     PrismaModule,
+    MailModule,
 
     // ─── Módulos de funcionalidade ────────────────────────────────────────
     HealthModule,
     UsersModule,
     AuthModule,
     PlacesModule,
+    SavedPlacesModule,
     // Fase 3 → evolução do domínio de usuários (perfil, preferências)
   ],
   providers: [

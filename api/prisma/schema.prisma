@@ -59,16 +59,55 @@ model User {
   state   String?
   country String?
 
+  /// Preferência declarada, não comportamento observado — por isso não entra
+  /// em `buildUserDna` (Cap. 57) ainda: o DNA é construído do que a pessoa
+  /// vive, não do que marca numa lista. Guardado para quando o onboarding ou
+  /// um cold start precisar de um sinal inicial, antes de haver histórico.
+  preferredCategories PlaceCategory[] @default([]) @map("preferred_categories")
+
+  /// Verificado por código de 6 dígitos enviado por e-mail no cadastro, não
+  /// a cada login. Não bloqueia nenhuma rota hoje — é só o estado visível
+  /// pro frontend decidir se mostra o aviso "confirme seu e-mail".
+  emailVerified Boolean @default(false) @map("email_verified")
+
   status UserStatus @default(novo)
   role   UserRole   @default(usuario)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  refreshTokens RefreshToken[]
-  places        Place[]
+  refreshTokens      RefreshToken[]
+  places             Place[]
+  savedPlaces        SavedPlace[]
+  verificationCodes  EmailVerificationCode[]
 
   @@map("users")
+}
+
+/// Código de verificação de e-mail — ponte de confiança até existir um
+/// provedor de e-mail transacional de verdade na infraestrutura (hoje:
+/// Resend, com fallback de logar o código no servidor se a chave não
+/// estiver configurada, ver `MailService`).
+model EmailVerificationCode {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// SHA-256 do código, nunca o código em si — mesmo raciocínio do refresh
+  /// token (`TokenService.hashRefreshToken`): dump do banco não expõe
+  /// código ativo.
+  codeHash  String   @map("code_hash")
+  expiresAt DateTime @map("expires_at")
+
+  /// Tentativas erradas nesta linha. Trava depois de 5 — força reenvio, não
+  /// permite força bruta sobre 10^6 combinações de um código de 6 dígitos.
+  attempts Int @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("email_verification_codes")
 }
 
 // ─── Sessão ──────────────────────────────────────────────────────────────────
@@ -167,4 +206,35 @@ model Place {
 
   @@index([category])
   @@map("places")
+}
+
+// ─── Salvos ──────────────────────────────────────────────────────────────────
+
+enum SavedPlaceKind {
+  favorito
+  quero
+  vivido
+}
+
+/// "Quero ir" / "já fui" / favorito — Cap. 22, corte simples (sem Agenda).
+///
+/// `placeId` é texto solto, não FK pro `Place`: a lista hoje mistura lugares
+/// mockados (ids como "p-dom") com reais (uuid do Postgres), e Salvos precisa
+/// funcionar pros dois até o mock sair de cena de vez. Perde integridade
+/// referencial de propósito — a alternativa (só aceitar lugar real) deixaria
+/// metade dos lugares exibidos sem poder ser salvos, pior do que isso.
+model SavedPlace {
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  placeId String         @map("place_id")
+  kind    SavedPlaceKind
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, placeId, kind])
+  @@index([userId])
+  @@map("saved_places")
 }

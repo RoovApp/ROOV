@@ -7,6 +7,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { RefreshTokenRepository } from './refresh-token.repository';
+import { EmailVerificationRepository } from './email-verification.repository';
 import { TokenService } from './token.service';
 
 @Module({
@@ -36,7 +37,13 @@ import { TokenService } from './token.service';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PasswordService, TokenService, RefreshTokenRepository],
+  providers: [
+    AuthService,
+    PasswordService,
+    TokenService,
+    RefreshTokenRepository,
+    EmailVerificationRepository,
+  ],
   /**
    * `TokenService` é exportado porque o guard global, registrado em
    * `AppModule`, precisa dele para verificar tokens.

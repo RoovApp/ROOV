@@ -57,6 +57,14 @@ export class AppConfigService {
     return this.get('REFRESH_TOKEN_TTL_DAYS');
   }
 
+  get resendApiKey(): string | undefined {
+    return this.get('RESEND_API_KEY');
+  }
+
+  get resendFromEmail(): string {
+    return this.get('RESEND_FROM_EMAIL');
+  }
+
   get logLevel(): Env['LOG_LEVEL'] {
     return this.get('LOG_LEVEL');
   }

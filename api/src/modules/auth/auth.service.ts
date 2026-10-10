@@ -1,15 +1,24 @@
+import { createHash, randomInt } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import type { User } from '@prisma/client';
 import { AppException } from '../../common/errors/app.exception';
+import { MailService } from '../../infra/mail/mail.service';
 import { UsersRepository } from '../users/users.repository';
 import { toPublicUser, type PublicUser } from '../users/users.service';
 import { PasswordService } from './password.service';
 import { RefreshTokenRepository } from './refresh-token.repository';
+import { EmailVerificationRepository } from './email-verification.repository';
 import { TokenService } from './token.service';
 import type { ChangePasswordDto } from './dto/change-password.dto';
 import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
+
+/** 15 minutos de validade, 5 tentativas erradas — depois disso, só reenvio. */
+const VERIFICATION_CODE_TTL_MINUTES = 15;
+const VERIFICATION_MAX_ATTEMPTS = 5;
+/** Intervalo mínimo entre reenvios, pra não virar um disparador de spam. */
+const VERIFICATION_RESEND_COOLDOWN_SECONDS = 60;
 
 export type { PublicUser };
 
@@ -31,8 +40,10 @@ export class AuthService {
   constructor(
     private readonly users: UsersRepository,
     private readonly refreshTokens: RefreshTokenRepository,
+    private readonly verificationCodes: EmailVerificationRepository,
     private readonly passwords: PasswordService,
     private readonly tokens: TokenService,
+    private readonly mail: MailService,
     private readonly logger: PinoLogger,
   ) {
     this.logger.setContext(AuthService.name);
@@ -48,6 +59,9 @@ export class AuthService {
         username: dto.username,
         name: dto.name,
         passwordHash,
+        city: dto.city,
+        state: dto.state,
+        country: dto.country,
       });
     } catch (error) {
       /**
@@ -68,7 +82,107 @@ export class AuthService {
 
     this.logger.info({ userId: user.id }, 'Usuário cadastrado');
 
+    // Best-effort de verdade: captura aqui, não só dentro de `MailService`.
+    // Se gerar/guardar o código falhar (ex.: banco fora do ar por um
+    // instante), o cadastro segue — o usuário pede reenvio depois. A conta
+    // já foi criada; não existe motivo para derrubá-la por causa disso.
+    try {
+      await this.sendVerificationCode(user);
+    } catch (error) {
+      this.logger.error(
+        { err: error, userId: user.id },
+        'Falha ao gerar/enviar código de verificação no cadastro',
+      );
+    }
+
     return this.createSession(user);
+  }
+
+  /**
+   * Confirma o código enviado no cadastro.
+   *
+   * Trava depois de `VERIFICATION_MAX_ATTEMPTS` tentativas erradas na mesma
+   * linha — força reenvio em vez de permitir força bruta sobre um código de
+   * 6 dígitos (10^6 combinações, pouco pra quem tenta sem limite).
+   */
+  async verifyEmail(userId: string, code: string): Promise<PublicUser> {
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw AppException.unauthenticated('Sessão inválida.');
+    }
+    if (user.emailVerified) {
+      return toPublicUser(user);
+    }
+
+    const latest = await this.verificationCodes.findLatest(userId);
+    if (!latest) {
+      throw AppException.badRequest('Nenhum código pendente. Peça um novo.');
+    }
+    if (latest.attempts >= VERIFICATION_MAX_ATTEMPTS) {
+      throw AppException.badRequest('Muitas tentativas erradas. Peça um código novo.');
+    }
+    if (latest.expiresAt <= new Date()) {
+      throw AppException.badRequest('Código expirado. Peça um novo.');
+    }
+
+    if (latest.codeHash !== this.hashVerificationCode(code)) {
+      await this.verificationCodes.incrementAttempts(latest.id);
+      throw AppException.badRequest('Código inválido.');
+    }
+
+    const verified = await this.users.markEmailVerified(userId);
+    await this.verificationCodes.deleteAllForUser(userId);
+    this.logger.info({ userId }, 'E-mail verificado');
+
+    return toPublicUser(verified);
+  }
+
+  /** Reenvio sob pedido — ex.: código não chegou, ou expirou antes de ser usado. */
+  async resendVerification(userId: string): Promise<void> {
+    const user = await this.users.findById(userId);
+    if (!user) {
+      throw AppException.unauthenticated('Sessão inválida.');
+    }
+    if (user.emailVerified) {
+      throw AppException.badRequest('Este e-mail já está verificado.');
+    }
+
+    const latest = await this.verificationCodes.findLatest(userId);
+    if (latest) {
+      const secondsSinceLast = (Date.now() - latest.createdAt.getTime()) / 1000;
+      if (secondsSinceLast < VERIFICATION_RESEND_COOLDOWN_SECONDS) {
+        throw AppException.rateLimited(
+          `Aguarde ${Math.ceil(VERIFICATION_RESEND_COOLDOWN_SECONDS - secondsSinceLast)}s para pedir um novo código.`,
+        );
+      }
+    }
+
+    await this.sendVerificationCode(user);
+  }
+
+  /** Gera um código novo, substitui qualquer anterior e dispara o e-mail. */
+  private async sendVerificationCode(user: User): Promise<void> {
+    const code = String(randomInt(0, 1_000_000)).padStart(6, '0');
+    const expiresAt = new Date(Date.now() + VERIFICATION_CODE_TTL_MINUTES * 60_000);
+
+    await this.verificationCodes.deleteAllForUser(user.id);
+    await this.verificationCodes.create({
+      userId: user.id,
+      codeHash: this.hashVerificationCode(code),
+      expiresAt,
+    });
+
+    await this.mail.sendVerificationCode(user.email, code);
+  }
+
+  /**
+   * SHA-256, não Argon2: ao contrário de senha, um código de 6 dígitos não
+   * ganha segurança real de um hash lento — o que impede força bruta aqui é
+   * `VERIFICATION_MAX_ATTEMPTS`, não o custo do hash. Mesmo raciocínio do
+   * `TokenService.hashRefreshToken`.
+   */
+  private hashVerificationCode(code: string): string {
+    return createHash('sha256').update(code).digest('hex');
   }
 
   async login(dto: LoginDto): Promise<AuthSession> {

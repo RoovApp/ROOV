@@ -92,6 +92,14 @@ export class AppException extends HttpException {
     return new AppException(ErrorCode.CONFLICT, message, HttpStatus.CONFLICT);
   }
 
+  static rateLimited(message = 'Muitas tentativas. Aguarde um momento.'): AppException {
+    return new AppException(
+      ErrorCode.RATE_LIMITED,
+      message,
+      HttpStatus.TOO_MANY_REQUESTS,
+    );
+  }
+
   static invalidCursor(
     message = 'Cursor de paginação inválido.',
   ): AppException {

@@ -1,9 +1,12 @@
+import { createHash } from 'node:crypto';
 import { Test } from '@nestjs/testing';
 import { PinoLogger } from 'nestjs-pino';
 import { AuthService } from './auth.service';
 import { PasswordService } from './password.service';
 import { RefreshTokenRepository } from './refresh-token.repository';
+import { EmailVerificationRepository } from './email-verification.repository';
 import { TokenService } from './token.service';
+import { MailService } from '../../infra/mail/mail.service';
 import { UsersRepository } from '../users/users.repository';
 import { AppException } from '../../common/errors/app.exception';
 import { ErrorCode } from '../../common/errors/error-code';
@@ -26,6 +29,8 @@ describe('AuthService', () => {
     city: null,
     state: null,
     country: null,
+    preferredCategories: [] as const,
+    emailVerified: false,
     status: 'ativo' as const,
     role: 'usuario' as const,
     createdAt: new Date(),
@@ -44,11 +49,13 @@ describe('AuthService', () => {
     users?: Partial<UsersRepository>;
     refreshTokens?: Partial<RefreshTokenRepository>;
     passwords?: Partial<PasswordService>;
+    verificationCodes?: Partial<EmailVerificationRepository>;
   }) {
     const users = {
       findById: jest.fn(),
       findByEmail: jest.fn(),
       create: jest.fn(),
+      markEmailVerified: jest.fn(),
       ...overrides.users,
     };
     const refreshTokens = {
@@ -72,14 +79,26 @@ describe('AuthService', () => {
       hashRefreshToken: jest.fn((token: string) => `${token}-hash`),
       refreshTokenExpiresAt: jest.fn().mockReturnValue(new Date(Date.now() + 8.64e7)),
     };
+    const verificationCodes = {
+      create: jest.fn().mockResolvedValue({}),
+      findLatest: jest.fn().mockResolvedValue(null),
+      incrementAttempts: jest.fn().mockResolvedValue(undefined),
+      deleteAllForUser: jest.fn().mockResolvedValue(undefined),
+      ...overrides.verificationCodes,
+    };
+    const mail = {
+      sendVerificationCode: jest.fn().mockResolvedValue(undefined),
+    };
 
     const moduleRef = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UsersRepository, useValue: users },
         { provide: RefreshTokenRepository, useValue: refreshTokens },
+        { provide: EmailVerificationRepository, useValue: verificationCodes },
         { provide: PasswordService, useValue: passwords },
         { provide: TokenService, useValue: tokens },
+        { provide: MailService, useValue: mail },
         { provide: PinoLogger, useValue: buildLogger() },
       ],
     }).compile();
@@ -90,6 +109,8 @@ describe('AuthService', () => {
       refreshTokens,
       passwords,
       tokens,
+      verificationCodes,
+      mail,
     };
   }
 
@@ -242,6 +263,145 @@ describe('AuthService', () => {
       expect(refreshTokens.revoke).toHaveBeenCalledWith('rt-1');
       // Sair no celular não pode derrubar o notebook.
       expect(refreshTokens.revokeAllForUser).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('register', () => {
+    it('envia um código de verificação ao cadastrar', async () => {
+      const { service, users, mail } = await build({
+        users: { create: jest.fn().mockResolvedValue(baseUser) },
+      });
+
+      await service.register({
+        email: 'ana@exemplo.com',
+        username: 'ana',
+        name: 'Ana',
+        password: 'senha12345',
+      });
+
+      expect(users.create).toHaveBeenCalled();
+      expect(mail.sendVerificationCode).toHaveBeenCalledWith('ana@exemplo.com', expect.any(String));
+    });
+
+    it('não deixa o cadastro falhar se o envio do e-mail falhar', async () => {
+      const { service, mail } = await build({
+        users: { create: jest.fn().mockResolvedValue(baseUser) },
+      });
+      mail.sendVerificationCode.mockRejectedValue(new Error('provedor fora do ar'));
+
+      // A conta já foi criada nesse ponto — uma falha de e-mail não pode
+      // derrubar um cadastro que já aconteceu.
+      const session = await service.register({
+        email: 'ana@exemplo.com',
+        username: 'ana',
+        name: 'Ana',
+        password: 'senha12345',
+      });
+
+      expect(session.accessToken).toBe('access-token');
+    });
+  });
+
+  describe('verifyEmail', () => {
+    const activeCode = {
+      id: 'code-1',
+      userId: 'user-1',
+      codeHash: createHash('sha256').update('123456').digest('hex'),
+      expiresAt: new Date(Date.now() + 60_000),
+      attempts: 0,
+      createdAt: new Date(),
+    };
+
+    it('confirma com o código certo e marca o e-mail como verificado', async () => {
+      const { service, users, verificationCodes } = await build({
+        users: {
+          findById: jest.fn().mockResolvedValue(baseUser),
+          markEmailVerified: jest
+            .fn()
+            .mockResolvedValue({ ...baseUser, emailVerified: true }),
+        },
+        verificationCodes: { findLatest: jest.fn().mockResolvedValue(activeCode) },
+      });
+
+      const result = await service.verifyEmail('user-1', '123456');
+
+      expect(result.emailVerified).toBe(true);
+      expect(users.markEmailVerified).toHaveBeenCalledWith('user-1');
+      expect(verificationCodes.deleteAllForUser).toHaveBeenCalledWith('user-1');
+    });
+
+    it('rejeita código errado e soma uma tentativa, sem verificar', async () => {
+      const { service, users, verificationCodes } = await build({
+        users: { findById: jest.fn().mockResolvedValue(baseUser) },
+        verificationCodes: { findLatest: jest.fn().mockResolvedValue(activeCode) },
+      });
+
+      const erro = await service.verifyEmail('user-1', '000000').catch((e) => e);
+
+      expect((erro as AppException).code).toBe(ErrorCode.BAD_REQUEST);
+      expect(verificationCodes.incrementAttempts).toHaveBeenCalledWith('code-1');
+      expect(users.markEmailVerified).not.toHaveBeenCalled();
+    });
+
+    it('rejeita código expirado', async () => {
+      const { service } = await build({
+        users: { findById: jest.fn().mockResolvedValue(baseUser) },
+        verificationCodes: {
+          findLatest: jest
+            .fn()
+            .mockResolvedValue({ ...activeCode, expiresAt: new Date(Date.now() - 1000) }),
+        },
+      });
+
+      const erro = await service.verifyEmail('user-1', '123456').catch((e) => e);
+
+      expect((erro as AppException).code).toBe(ErrorCode.BAD_REQUEST);
+    });
+
+    it('trava depois de muitas tentativas erradas, mesmo com o código certo', async () => {
+      const { service } = await build({
+        users: { findById: jest.fn().mockResolvedValue(baseUser) },
+        verificationCodes: {
+          findLatest: jest.fn().mockResolvedValue({ ...activeCode, attempts: 5 }),
+        },
+      });
+
+      const erro = await service.verifyEmail('user-1', '123456').catch((e) => e);
+
+      expect((erro as AppException).code).toBe(ErrorCode.BAD_REQUEST);
+    });
+  });
+
+  describe('resendVerification', () => {
+    it('respeita o cooldown entre reenvios', async () => {
+      const { service, mail } = await build({
+        users: { findById: jest.fn().mockResolvedValue(baseUser) },
+        verificationCodes: {
+          findLatest: jest.fn().mockResolvedValue({
+            id: 'code-1',
+            userId: 'user-1',
+            codeHash: 'qualquer',
+            expiresAt: new Date(Date.now() + 60_000),
+            attempts: 0,
+            createdAt: new Date(),
+          }),
+        },
+      });
+
+      const erro = await service.resendVerification('user-1').catch((e) => e);
+
+      expect((erro as AppException).code).toBe(ErrorCode.RATE_LIMITED);
+      expect(mail.sendVerificationCode).not.toHaveBeenCalled();
+    });
+
+    it('rejeita reenvio para e-mail já verificado', async () => {
+      const { service } = await build({
+        users: { findById: jest.fn().mockResolvedValue({ ...baseUser, emailVerified: true }) },
+      });
+
+      const erro = await service.resendVerification('user-1').catch((e) => e);
+
+      expect((erro as AppException).code).toBe(ErrorCode.BAD_REQUEST);
     });
   });
 });

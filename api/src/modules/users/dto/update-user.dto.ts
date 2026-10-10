@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
-import { IsOptional, IsString, Length, MaxLength } from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, Length, MaxLength } from 'class-validator';
+import { PlaceCategory } from '@prisma/client';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
@@ -15,6 +16,17 @@ export class UpdateUserDto {
   @IsString()
   @Length(2, 80, { message: 'Nome deve ter entre 2 e 80 caracteres.' })
   name?: string;
+
+  /**
+   * Preset (um emoji), não upload de arquivo: Storage é decisão de Fase 11,
+   * não deste corte. Limite curto de propósito, pra não virar campo de texto
+   * livre disfarçado de avatar.
+   */
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(8, { message: 'Avatar inválido.' })
+  avatar?: string;
 
   @IsOptional()
   @Transform(trim)
@@ -39,4 +51,10 @@ export class UpdateUserDto {
   @IsString()
   @MaxLength(100, { message: 'País excede o tamanho máximo permitido.' })
   country?: string;
+
+  /** Preferência declarada — ver comentário do campo em `schema.prisma`. */
+  @IsOptional()
+  @IsArray()
+  @IsEnum(PlaceCategory, { each: true, message: 'Categoria inválida.' })
+  preferredCategories?: PlaceCategory[];
 }

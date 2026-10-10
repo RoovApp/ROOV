@@ -14,6 +14,8 @@ export interface PublicUser {
   city: string | null;
   state: string | null;
   country: string | null;
+  preferredCategories: User['preferredCategories'];
+  emailVerified: boolean;
   status: User['status'];
   role: User['role'];
 }
@@ -37,6 +39,8 @@ export function toPublicUser(user: User): PublicUser {
     city: user.city,
     state: user.state,
     country: user.country,
+    preferredCategories: user.preferredCategories,
+    emailVerified: user.emailVerified,
     status: user.status,
     role: user.role,
   };

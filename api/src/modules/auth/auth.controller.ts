@@ -6,6 +6,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshDto } from './dto/refresh.dto';
 import { RegisterDto } from './dto/register.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
 
 @Controller('auth')
@@ -75,6 +76,35 @@ export class AuthController {
     @Body() dto: ChangePasswordDto,
   ): Promise<void> {
     await this.auth.changePassword(user.id, dto);
+  }
+
+  /**
+   * POST /v1/auth/verify-email
+   *
+   * Protegida: quem confirma já tem sessão (o código foi gerado no
+   * cadastro, que já devolve sessão). Devolve o usuário atualizado
+   * (`emailVerified: true`) pra o frontend atualizar o estado local sem
+   * precisar de outra chamada.
+   */
+  @HttpCode(HttpStatus.OK)
+  @Post('verify-email')
+  verifyEmail(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: VerifyEmailDto,
+  ): Promise<PublicUser> {
+    return this.auth.verifyEmail(user.id, dto.code);
+  }
+
+  /**
+   * POST /v1/auth/resend-verification
+   *
+   * Protegida pela mesma razão. Sujeita a cooldown — ver
+   * `AuthService.resendVerification`.
+   */
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post('resend-verification')
+  async resendVerification(@CurrentUser() user: AuthenticatedUser): Promise<void> {
+    await this.auth.resendVerification(user.id);
   }
 
   /**

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, type User } from '@prisma/client';
+import { Prisma, type PlaceCategory, type User } from '@prisma/client';
 import { PrismaService } from '../../infra/prisma/prisma.service';
 
 export interface CreateUserData {
@@ -7,6 +7,10 @@ export interface CreateUserData {
   username: string;
   name: string;
   passwordHash: string;
+  /** Localização opcional informada no próprio cadastro, ver `RegisterDto`. */
+  city?: string;
+  state?: string;
+  country?: string;
 }
 
 /**
@@ -16,17 +20,20 @@ export interface CreateUserData {
  */
 export interface UpdateUserData {
   name?: string;
+  avatar?: string | null;
   bio?: string | null;
   city?: string | null;
   state?: string | null;
   country?: string | null;
+  preferredCategories?: PlaceCategory[];
 }
 
 /**
  * Persistência de usuários.
  *
- * Avatar (upload) e preferências ainda não entram aqui — Fase 3 segue em
- * cortes; este é só o de edição de informações básicas.
+ * Avatar é preset (um emoji), não upload: Storage fica pra Fase 11, não
+ * entra neste corte. `preferredCategories` é preferência declarada, sinal
+ * de cold start, não o DNA construído por comportamento (Cap. 57).
  *
  * Única camada do sistema autorizada a tocar o Prisma para esta entidade.
  */
@@ -52,6 +59,10 @@ export class UsersRepository {
 
   update(id: string, data: UpdateUserData): Promise<User> {
     return this.prisma.user.update({ where: { id }, data });
+  }
+
+  markEmailVerified(id: string): Promise<User> {
+    return this.prisma.user.update({ where: { id }, data: { emailVerified: true } });
   }
 
   /**

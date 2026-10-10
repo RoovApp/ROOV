@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
+  IsOptional,
   IsString,
   Length,
   Matches,
@@ -64,4 +65,26 @@ export class RegisterDto {
   @MinLength(8, { message: 'Senha deve ter no mínimo 8 caracteres.' })
   @MaxLength(128, { message: 'Senha excede o tamanho máximo permitido.' })
   password!: string;
+
+  /**
+   * Localização opcional, informada no próprio cadastro (não só depois, em
+   * Editar Perfil). Mesmos três campos do `UpdateUserDto`, mesma validação.
+   */
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(100, { message: 'Cidade excede o tamanho máximo permitido.' })
+  city?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(100, { message: 'Estado excede o tamanho máximo permitido.' })
+  state?: string;
+
+  @IsOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(100, { message: 'País excede o tamanho máximo permitido.' })
+  country?: string;
 }

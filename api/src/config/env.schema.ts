@@ -62,6 +62,22 @@ export const envSchema = z.object({
   /** Vida do refresh token, em dias. Este sim é revogável. */
   REFRESH_TOKEN_TTL_DAYS: z.coerce.number().int().positive().default(30),
 
+  /**
+   * Chave do Resend, para enviar o código de verificação de e-mail do
+   * cadastro. Opcional de propósito, ao contrário do resto deste arquivo:
+   * sem ela, `MailService` cai pro modo de desenvolvimento (loga o código no
+   * servidor em vez de enviar e-mail de verdade) em vez de impedir a API de
+   * subir — verificação de e-mail é funcionalidade nova, não crítica o
+   * bastante pra travar o boot da aplicação inteira por falta dela.
+   */
+  RESEND_API_KEY: z.string().optional(),
+
+  /** Remetente dos e-mails transacionais. Default é o domínio de teste do Resend, que funciona sem verificação de domínio própria. */
+  RESEND_FROM_EMAIL: z
+    .string()
+    .email('RESEND_FROM_EMAIL precisa ser um e-mail válido.')
+    .default('onboarding@resend.dev'),
+
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace'])
     .default('info'),
