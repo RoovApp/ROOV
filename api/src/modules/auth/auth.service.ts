@@ -82,19 +82,13 @@ export class AuthService {
 
     this.logger.info({ userId: user.id }, 'Usuário cadastrado');
 
-    // Best-effort de verdade: captura aqui, não só dentro de `MailService`.
-    // Se gerar/guardar o código falhar (ex.: banco fora do ar por um
-    // instante), o cadastro segue — o usuário pede reenvio depois. A conta
-    // já foi criada; não existe motivo para derrubá-la por causa disso.
-    try {
-      await this.sendVerificationCode(user);
-    } catch (error) {
-      this.logger.error(
-        { err: error, userId: user.id },
-        'Falha ao gerar/enviar código de verificação no cadastro',
-      );
-    }
-
+    /**
+     * Verificação de e-mail desligada no cadastro (decisão de 12/nov/2026):
+     * nenhum código é gerado nem enviado, e o front não segura mais a entrada
+     * no app. `verifyEmail`/`resendVerification` continuam existindo, só sem
+     * uso. Para religar, voltar a chamar `this.sendVerificationCode(user)`
+     * aqui (best-effort, com try/catch) e o portão `verifying` no front.
+     */
     return this.createSession(user);
   }
 

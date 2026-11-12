@@ -39,9 +39,10 @@ export function AuthProvider({ children }) {
         if (cancelled) return;
         saveSession(fresh);
         setUser(fresh.user);
-        // Recarregar a página no meio da verificação não deve pular a
-        // etapa: o portão continua valendo até o código ser confirmado.
-        setStatus(fresh.user.emailVerified ? 'authenticated' : 'verifying');
+        // Verificação de e-mail desligada (12/nov/2026): sessão válida entra
+        // direto, verificado ou não. Para religar, voltar a mandar para
+        // 'verifying' quando `!fresh.user.emailVerified`.
+        setStatus('authenticated');
       })
       .catch(() => {
         if (cancelled) return;
@@ -55,17 +56,17 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
-   * Cadastro + verificação de e-mail por código (no cadastro, não em todo
-   * login — decisão registrada). A conta já existe e já tem sessão nesse
-   * ponto (`authService.register` devolve sessão completa); `status:
-   * 'verifying'` só segura a entrada no app até o código ser confirmado.
+   * Cadastro. `authService.register` já devolve sessão completa, então entra
+   * direto no app. A verificação de e-mail por código foi desligada em
+   * 12/nov/2026 (a API não envia mais o código); `verifyEmail` e
+   * `resendVerification` abaixo ficam sem uso até ela ser religada.
    */
   const register = useCallback(async (data) => {
     const session = await authService.register(data);
     saveSession(session);
     setUser(session.user);
     setNotice(null);
-    setStatus(session.user.emailVerified ? 'authenticated' : 'verifying');
+    setStatus('authenticated');
   }, []);
 
   const verifyEmail = useCallback(async (code) => {

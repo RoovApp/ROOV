@@ -13,7 +13,6 @@ import { PlaceActionsProvider } from './components/PlaceActions.jsx';
 import { AppShell } from './components/AppShell.jsx';
 import { SplashScreen } from './modules/onboarding/SplashScreen.jsx';
 import { AuthModule } from './modules/onboarding/AuthModule.jsx';
-import { VerifyEmailModule } from './modules/onboarding/VerifyEmailModule.jsx';
 import { InstallAppModule } from './modules/onboarding/InstallAppModule.jsx';
 import { isStandalone } from './services/installPrompt.js';
 import { DiscoveryModule } from './modules/discovery/DiscoveryModule.jsx';
@@ -69,19 +68,6 @@ function AuthGate() {
     return (
       <div className="mx-auto h-full w-full max-w-md">
         <AuthModule />
-      </div>
-    );
-  }
-
-  /**
-   * Verificação de e-mail do cadastro (não a cada login — decisão
-   * registrada). A conta e a sessão já existem; isto só segura a entrada
-   * no resto do app até o código ser confirmado.
-   */
-  if (status === 'verifying') {
-    return (
-      <div className="mx-auto h-full w-full max-w-md">
-        <VerifyEmailModule />
       </div>
     );
   }

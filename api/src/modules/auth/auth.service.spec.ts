@@ -267,30 +267,11 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('envia um código de verificação ao cadastrar', async () => {
-      const { service, users, mail } = await build({
+    it('cadastra e devolve sessão sem gerar nem enviar código de verificação', async () => {
+      const { service, users, mail, verificationCodes } = await build({
         users: { create: jest.fn().mockResolvedValue(baseUser) },
       });
 
-      await service.register({
-        email: 'ana@exemplo.com',
-        username: 'ana',
-        name: 'Ana',
-        password: 'senha12345',
-      });
-
-      expect(users.create).toHaveBeenCalled();
-      expect(mail.sendVerificationCode).toHaveBeenCalledWith('ana@exemplo.com', expect.any(String));
-    });
-
-    it('não deixa o cadastro falhar se o envio do e-mail falhar', async () => {
-      const { service, mail } = await build({
-        users: { create: jest.fn().mockResolvedValue(baseUser) },
-      });
-      mail.sendVerificationCode.mockRejectedValue(new Error('provedor fora do ar'));
-
-      // A conta já foi criada nesse ponto — uma falha de e-mail não pode
-      // derrubar um cadastro que já aconteceu.
       const session = await service.register({
         email: 'ana@exemplo.com',
         username: 'ana',
@@ -298,7 +279,11 @@ describe('AuthService', () => {
         password: 'senha12345',
       });
 
+      expect(users.create).toHaveBeenCalled();
       expect(session.accessToken).toBe('access-token');
+      // Verificação de e-mail desligada no cadastro (12/nov/2026).
+      expect(mail.sendVerificationCode).not.toHaveBeenCalled();
+      expect(verificationCodes.create).not.toHaveBeenCalled();
     });
   });
 
