@@ -9,7 +9,8 @@ import './services/installPrompt.js';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
+    {/* Sem a barra final: o React Router não reconhece `/admin` com basename `/admin/`. */}
+    <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '')}>
       <App />
     </BrowserRouter>
   </StrictMode>,

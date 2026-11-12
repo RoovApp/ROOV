@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node -e \"require('fs').cpSync('site','dist',{recursive:true})\"",
     "preview": "vite preview"
   },
   "dependencies": {

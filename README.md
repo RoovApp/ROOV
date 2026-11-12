@@ -203,5 +203,7 @@ exige decisão registrada em documento, não commit.
 - `docs/EMENDA-004-SEED-TAGS-NO-PLACE.md`: ponte temporária de DNA pra lugar real
 - `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md`: PWA, CRUD de lugares completo e
   publicação real (Vercel + Render + Supabase)
+- `docs/EMENDA-006-TESTE-FECHADO-EM-ADMIN.md`: app em `/admin` com senha de
+  teste, e cadastro sem código de e-mail
 - `docs/PRODUTO.md`: visão de MVP, status atual e próximos passos (pra
   apresentar fora do time técnico)
