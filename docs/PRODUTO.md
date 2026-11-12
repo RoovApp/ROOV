@@ -246,6 +246,14 @@ API Keys, colar em `RESEND_API_KEY` no `api/.env`. `RESEND_FROM_EMAIL` já
 vem com o domínio de teste do Resend (`onboarding@resend.dev`), que funciona
 sem verificar domínio próprio.
 
+**Já configurado em produção** (Render, desde 12/nov): conta `roovapp.dev`
+no Resend, chave na variável `RESEND_API_KEY` do serviço `roov-api`.
+**Limitação confirmada do domínio de teste:** `onboarding@resend.dev` só
+entrega pro e-mail da própria conta Resend — qualquer outro destinatário
+recebe `403` ("Testing domain restriction"). Pra qualquer usuário de fora
+receber o código de verdade, falta verificar um domínio próprio no painel
+do Resend (`Domains`) e trocar `RESEND_FROM_EMAIL`.
+
 ### Como testar
 
 A API já tem suíte de testes automatizados (Jest) cobrindo autenticação:

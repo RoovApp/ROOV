@@ -81,17 +81,23 @@ assumir o projeto, confirme que o projeto Supabase ativo é o mesmo que a
 | API | Render | Free (grátis) | `https://roov-api-ttm0.onrender.com` |
 | Banco | Supabase | Free (grátis) | São Paulo (`sa-east-1`), recriado em 12/nov |
 
-**Duas ressalvas operacionais, não bugs:**
+**Uma ressalva operacional, não bug:**
 
 - **Cold start da API:** no plano Free do Render, a instância "dorme" depois
   de um tempo sem tráfego. A primeira requisição depois disso pode levar uns
   50 segundos. Upgrade pra Starter (~US$ 7/mês) remove isso, se incomodar
   antes de validar com usuários reais.
-- **E-mail de verificação não está ativo:** sem `RESEND_API_KEY`, o código de
-  6 dígitos do cadastro só é logado no servidor (ver logs do Render), não
-  chega no e-mail de ninguém. Configurar é rápido (conta grátis em
-  resend.com, colar a chave na variável de ambiente do Render) — ver
-  `README.md`.
+
+**E-mail de verificação, configurado em 12/nov (mesmo dia).** Conta criada
+no Resend via GitHub (org `roovapp.dev`), chave gerada e colada em
+`RESEND_API_KEY` no ambiente do Render. Validado de ponta a ponta: cadastro
+real no beta publicado, e-mail confirmado como `Delivered` no painel do
+Resend. **Limite do domínio de teste (`onboarding@resend.dev`):** só envia
+pro e-mail da própria conta Resend, não para qualquer destinatário — serve
+pra validar que o envio funciona, não pra receber cadastro de usuário de
+fora ainda. Pra qualquer pessoa de verdade receber o código, falta verificar
+um domínio próprio no Resend (`Domains` no painel), passo que não foi feito
+nesta rodada.
 
 **Como republicar depois de um `git push`:**
 
