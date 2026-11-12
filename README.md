@@ -40,6 +40,39 @@ npm run db:migrate                # aplica as migrations
 npm run dev                       # http://localhost:3000/v1/health
 ```
 
+**De onde tirar `DATABASE_URL`/`DIRECT_URL` de verdade:** painel do Supabase
+(projeto `roov`, região São Paulo) → botão **Connect** → aba **Direct
+connection**, trocando pra **Transaction pooler** (vira `DATABASE_URL`) e
+**Session pooler** (vira `DIRECT_URL`). A senha do banco não está em nenhum
+arquivo deste repositório; peça pra quem administra o projeto no Supabase.
+Se o `@` da senha quebrar a leitura da connection string, troque por `%40`.
+
+## Produção (beta publicado)
+
+| Camada | Serviço | Endereço |
+| --- | --- | --- |
+| Front (PWA) | Vercel (Hobby) | `https://roov-web-rouge.vercel.app` |
+| API | Render (Free) | `https://roov-api-ttm0.onrender.com` |
+| Banco | Supabase (Free, São Paulo) | painel do Supabase, projeto `roov` |
+
+Detalhe completo (custos, ressalvas de cold start/e-mail, como republicar
+cada camada) em `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md`. Resumo rápido:
+
+- **API redeploya sozinha** a cada `git push` na branch `main` deste
+  repositório (Render está conectado ao GitHub).
+- **Front não está conectado ao GitHub ainda.** Publicar uma versão nova:
+  ```bash
+  cd web
+  npx vercel link --yes --project roov-web   # só na primeira vez, por máquina
+  npx vercel deploy --prod --build-env VITE_API_URL=https://roov-api-ttm0.onrender.com/v1
+  ```
+  Precisa estar logado numa conta Vercel com acesso ao projeto
+  (`npx vercel login`).
+- **CORS da API** (`CORS_ORIGINS` no ambiente do Render) precisa incluir
+  qualquer novo domínio do front, separado por vírgula. Se o Vercel gerar
+  uma URL de produção diferente (acontece se o nome do projeto mudar),
+  atualize essa variável no painel do Render e redeploy.
+
 ## Comandos
 
 Dentro de `web/` ou `api/`:
@@ -73,6 +106,17 @@ como públicas são exceções explícitas via `@Public()`.
 
 Rotas de sessão são públicas porque são chamadas justamente quando não há
 access token válido: exigir um aqui tornaria login e renovação impossíveis.
+
+| Método | Rota | Público | O que faz |
+| --- | --- | --- | --- |
+| `POST` | `/places` | não | Cadastra um lugar. Quem cria vira o dono |
+| `GET` | `/places` | não | Lista paginada por cursor, filtro opcional por categoria |
+| `GET` | `/places/:id` | não | Detalhe de um lugar |
+| `PATCH` | `/places/:id` | não | Edita. Só quem cadastrou (`403` pra qualquer outro) |
+| `DELETE` | `/places/:id` | não | Exclui. Mesma regra de posse do `PATCH` |
+| `GET` | `/saved-places` | não | Lista de favoritos/quero/vivido do usuário autenticado |
+| `POST` | `/saved-places` | não | Marca um lugar (idempotente) |
+| `DELETE` | `/saved-places/:placeId/:kind` | não | Remove a marcação (idempotente) |
 
 **Sessão devolvida por register, login e refresh:**
 
@@ -156,5 +200,8 @@ exige decisão registrada em documento, não commit.
 - `docs/EMENDA-001-AUTENTICACAO-E-CUSTOS.md`: custos e hospedagem
 - `docs/EMENDA-002-AUTENTICACAO-PROPRIA.md`: reversão para autenticação própria
 - `docs/EMENDA-003-REPO-UNICO-SEM-WORKSPACE.md`: saída do monorepo pnpm
+- `docs/EMENDA-004-SEED-TAGS-NO-PLACE.md`: ponte temporária de DNA pra lugar real
+- `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md`: PWA, CRUD de lugares completo e
+  publicação real (Vercel + Render + Supabase)
 - `docs/PRODUTO.md`: visão de MVP, status atual e próximos passos (pra
   apresentar fora do time técnico)

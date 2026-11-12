@@ -1,9 +1,11 @@
 # ROOV: Documento de Produto
 
-**Data:** 01/out/2026 (última atualização: 10/out/2026)
-**Status:** rascunho para validar entre os sócios antes de travar o plano do mês.
-**Projeto pausado em 10/out/2026**, retomar quando a conta do Google Cloud
-existir (ver passo 7 da seção 3).
+**Data:** 01/out/2026 (última atualização: 12/nov/2026)
+**Status:** beta publicado, testável de fora pelo sócio. Rascunho pra validar
+o próximo corte entre os sócios.
+**Retomado em 12/nov/2026** (tinha pausado em 10/out). A integração com
+Google Maps (passo 10 da seção 3) continua bloqueada por falta da conta
+Google Cloud; o resto do corte não dependia dela e seguiu.
 
 Este documento tem 5 partes: o que entra no MVP, o que já está pronto, o que
 ainda falta (com os próximos passos concretos), pontos estratégicos a
@@ -57,13 +59,16 @@ que está desenhado na tela.
 | Área | Status | Nota |
 | --- | --- | --- |
 | Autenticação | 🟢 Vivido | Cadastro, login, logout, refresh, perfil autenticado. Argon2id + JWT + refresh token com rotação. Desde 07/out, cadastro aceita localização opcional e exige confirmar um código de 6 dígitos por e-mail antes de entrar no app (não em todo login). 28 testes automatizados passando |
-| Lugares (backend) | 🟡 Quero viver | CRUD existe (criar, atualizar, consultar, categorias, horário), mas ainda não confirmado se cobre tudo que o front vai precisar |
+| Lugares (backend) | 🟢 Vivido | CRUD completo desde 12/nov: criar, consultar, editar e excluir, categorias, horário. Só quem cadastrou edita ou exclui (`403` validado pra qualquer outro usuário) |
 | Motor de recomendação (DNA, pesos, contexto, agenda) | 🟡 Quero viver | Roda sobre mock + lugar real (seedTags, EMENDA-004) desde 01/out. Ainda não viu sinal de uso de verdade (Posts, Fase 5) |
 | Mapa / Explorar (frontend) | 🟢 Vivido | Ligados em `api/` desde 01/out (EMENDA-004); mostram mock + lugar real juntos. Falta geolocalização de verdade (`distanceKm` é neutro pra lugar real) |
 | Perfil (frontend + backend) | 🟢 Vivido | Editar nome/bio/cidade/estado/país já era real desde antes (achado em 07/out, o status aqui estava desatualizado). Completado em 07/out: avatar (preset de emoji, sem upload) e preferência de categoria, ambos persistidos |
 | Salvos (favorito/quero/vivido) | 🟢 Vivido | Concluído em 07/out: tabela `SavedPlace`, toggle otimista no frontend, funciona pra lugar mockado e real (`placeId` sem FK, de propósito) |
 | Feed, Comunidades, Agenda avançada | ⚪ Ainda não | Telas existem (bonitas, navegáveis), mas 100% sobre dado inventado. Nenhuma dessas três tem uma linha de backend |
-| Infraestrutura | 🟢 Vivido | Estrutura do projeto organizada, testes automatizados no backend, hospedagem decidida (Postgres gerenciado, sem Docker) |
+| Web como PWA instalável | 🟢 Vivido | Concluído em 12/nov (`EMENDA-005`): manifest, service worker (nunca cacheia `/v1/*`), ícones a partir da marca do app. Tutorial de instalação uma vez, logo após o primeiro login |
+| Beta publicado | 🟢 Vivido | Concluído em 12/nov (`EMENDA-005`): front no Vercel, API no Render, banco no Supabase, os três publicados e testados de ponta a ponta nos endereços reais |
+| App mobile (Expo) | 🟡 Quero viver | Telas navegáveis, mas roda 100% sobre dado mockado em memória (`src/services/index.js`): nenhuma chamada à API real ainda, nem autenticação. Não fez parte desta rodada (focada em web/PWA) |
+| Infraestrutura | 🟢 Vivido | Estrutura do projeto organizada, testes automatizados no backend, hospedagem real (não mais só local) |
 
 **O que isso significa na prática:** o ROOV hoje é dois produtos colados, um
 aplicativo de verdade (autenticação) e uma demo muito bem feita (todo o
@@ -80,7 +85,10 @@ Em ordem: cada passo depende do anterior.
 1. ~~**Banco de dados em produção.**~~ **Concluído em 01/out.** Postgres
    gerenciado (Supabase, só como hospedagem, não para login, ver
    `docs/EMENDA-002-AUTENTICACAO-PROPRIA.md`), PostGIS ativo, migrations
-   aplicadas.
+   aplicadas. **Projeto recriado em 12/nov** (o original foi perdido numa
+   limpeza de contas, não por pausa de inatividade — ver
+   `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md`), mesma região (São Paulo),
+   mesmo schema, 7 migrations reaplicadas sem erro.
 2. ~~**Ligar Mapa e Explorar no dado real.**~~ **Concluído em 01/out, com uma
    ressalva registrada:** não foi só trocar a fonte de dado. O motor de
    recomendação precisava de `place.dna`, que não existia em lugar nenhum pra
@@ -117,10 +125,27 @@ Em ordem: cada passo depende do anterior.
    Padaria Bella Paulista pela própria tela, foi pro ar com DNA correto.
    Antes de hoje, só havia os 6 lugares cadastrados via script; agora são 7,
    e o self-service é real. Falta só upload de foto (Storage, Fase 11).
-6. **Decisão de hospedagem da API e do front**, depois do MVP rodando local
-   (Render/Fly/Railway para a API, o `Dockerfile` já existe pronto pra
-   qualquer uma; Vercel/Netlify para o front).
-7. **🔴 Bloqueado: integrar lugares do Google Maps.** Pedido em 10/out, fora
+6. ~~**Editar e excluir lugares.**~~ **Concluído em 12/nov.** Faltava fechar
+   o CRUD: só havia criar e ler. `PATCH`/`DELETE /v1/places/:id` na API, com
+   a mesma regra de posse do resto do sistema. No front, ícones de
+   editar/excluir na ficha do lugar, só pra quem cadastrou. Ver
+   `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md`.
+7. ~~**Transformar o web em PWA instalável.**~~ **Concluído em 12/nov.**
+   Manifest, service worker, ícones a partir da marca do app, e um tutorial
+   de instalação mostrado uma vez após o primeiro login. Detalhe completo em
+   `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md`.
+8. ~~**Decisão de hospedagem da API e do front.**~~ **Concluído em 12/nov.**
+   API no Render (Free), front no Vercel (Hobby), banco no Supabase (Free,
+   São Paulo). Testado de ponta a ponta nos endereços reais, não só local:
+   `https://roov-web-rouge.vercel.app` e `https://roov-api-ttm0.onrender.com`.
+   Custo de hoje: US$ 0/mês. Detalhe (cold start, e-mail de verificação, como
+   republicar) em `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md`.
+9. **Ligar o app mobile (Expo) na API real.** Continua rodando 100% sobre
+   dado mockado em memória, sem nenhuma chamada de rede. Com o web já
+   publicado como PWA, essa frente perdeu urgência pro teste imediato (dá
+   pra testar em Android e iPhone instalando o site), mas segue valendo pra
+   quando fizer sentido publicar nas lojas.
+10. **🔴 Bloqueado: integrar lugares do Google Maps.** Pedido em 10/out, fora
    do corte original: lugares passariam a vir do Google Places (nearby
    search, filtrado pro que faz sentido no ROOV) em vez de cadastro manual,
    que seria removido. O mapa principal passaria a ser um mapa de verdade
@@ -135,10 +160,12 @@ Em ordem: cada passo depende do anterior.
    de lugares (passo 5) continua sendo o único caminho pra lugar novo entrar
    no catálogo, e os 7 lugares já cadastrados ficam como estão.
 
-Depois desses 6 passos, o corte do MVP (seção 1) está de pé. A partir daí, a
-ordem de construção do que "fica como melhoria" volta a seguir o
-`docs/ROADMAP.md` na ordem em que está: Feed antes de Comunidades, DNA no
-servidor quando o segundo cliente (ex: app mobile) precisar dele de verdade.
+O corte do MVP (seção 1) está de pé desde o passo 5. Os passos 6 a 8
+(CRUD completo, PWA, publicação) são o que tornou esse corte testável por
+alguém de fora, não parte do corte em si. A partir daqui, a ordem de
+construção do que "fica como melhoria" volta a seguir o `docs/ROADMAP.md` na
+ordem em que está: Feed antes de Comunidades, DNA no servidor quando o
+segundo cliente (ex: app mobile) precisar dele de verdade.
 
 ---
 
@@ -263,6 +290,10 @@ suíte de testes; decisão a tomar quando ele parar de ser só mock.
   bruta é o limite de tentativas (`VERIFICATION_MAX_ATTEMPTS`), não o custo
   do hash. Envio é best-effort: falha não derruba o cadastro, só fica sem
   código até o usuário pedir reenvio.
+- Editar/excluir lugar é só pra quem cadastrou (`createdById`), sem papel de
+  moderador/admin ainda — isso é Fase 8. PWA nunca cacheia chamadas à API
+  (`/v1/*`): dado real sempre, nunca resposta velha servida offline sem o
+  usuário perceber (`EMENDA-005`).
 
 Lista completa de invariantes: `README.md`, seção "Invariantes da
 arquitetura".

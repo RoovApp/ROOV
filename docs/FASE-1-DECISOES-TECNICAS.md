@@ -291,6 +291,13 @@ com cada fase, nunca depois.
 destrói a percepção de qualidade do app. Os ~US$ 5/mês do Railway são o gasto
 com melhor retorno do projeto inteiro.
 
+> **Execução registrada em 12/nov (`EMENDA-005`):** pra validar o beta com
+> o sócio o quanto antes, a hospedagem foi pro ar mesmo nos planos
+> gratuitos (Render Free + Vercel Hobby), aceitando o cold start que este
+> documento já alertava. Custo real: US$ 0/mês. O alerta acima continua
+> valendo pra quando houver usuário real de fora do time: aí sim o upgrade
+> deixa de ser opcional.
+
 ---
 
 ## 4. Riscos identificados

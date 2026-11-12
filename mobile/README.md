@@ -82,7 +82,12 @@ Mesma ordem geral do `docs/PRODUTO.md` na raiz do repositório, adaptada pro
 mobile:
 
 1. Confirmar que o build instalável via EAS funciona de ponta a ponta no
-   seu aparelho (sem custo, distribuição interna).
+   seu aparelho (sem custo, distribuição interna). **Última tentativa
+   (01/out) deu erro na instalação de dependências**, nenhum `.apk` foi
+   gerado — ver `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md` pro contexto. Isso
+   deixou de ser bloqueio pro teste imediato: o `web/` virou PWA instalável
+   (mesma EMENDA), então dá pra testar em Android/iPhone instalando o site
+   enquanto esse build não é resolvido.
 2. Trocar `lib/supabase.ts` por um cliente HTTP que fala com `../api/`,
    igual o `web/src/services/apiClient.js` já faz.
 3. Ligar a tela de mapa nos lugares reais.

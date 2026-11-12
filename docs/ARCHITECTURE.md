@@ -43,7 +43,7 @@ Cada uma possui uma responsabilidade específica.
 |---------|------------------|
 | `domain` | Modelos de domínio, tipos e taxonomias oficiais do sistema. |
 | `engine` | Algoritmos e regras de negócio responsáveis pela inteligência do produto. |
-| `services` | Fonte de dados da aplicação. Atualmente utiliza serviços mock, mantendo a mesma interface que será utilizada futuramente pelo backend. |
+| `services` | Fonte de dados da aplicação. Mista hoje: Autenticação, Lugares e Salvos falam com a API real; Feed, Comunidades e Agenda ainda usam mock, atrás da mesma interface. |
 | `state` | Estado global da aplicação e orquestração entre serviços e motores. |
 | `components` | Componentes reutilizáveis compartilhados entre todos os módulos. |
 | `modules` | Funcionalidades da aplicação organizadas por domínio. |
@@ -128,9 +128,10 @@ Toda lógica de negócio deve permanecer nesta camada.
 
 Responsável pelo acesso aos dados.
 
-Atualmente utiliza serviços mock.
-
-No futuro, essa camada será responsável pela comunicação com a API sem impactar as demais camadas.
+Mista hoje: parte fala com a API real (`apiClient.js`), parte ainda usa mock
+(`mock/`). Ver "Estado Atual" no fim deste documento pra saber qual módulo
+está em qual lado. Migrar um módulo do mock pra API real não deve impactar
+`engine/`, `domain/` nem `components/`.
 
 ---
 
@@ -227,14 +228,22 @@ Duplicação deve ser evitada.
 
 # Estado Atual
 
-Atualmente o frontend utiliza:
+*(Atualizado em 12/nov/2026 — este parágrafo tinha ficado desatualizado desde
+antes da autenticação existir. Status detalhado e por módulo vive em
+`docs/PRODUTO.md`, seção 2; aqui é só a visão de arquitetura.)*
 
-- serviços mock com latência simulada;
-- mapa baseado em projeção própria;
-- clima simulado;
-- autenticação ainda não implementada.
+A camada `services/` hoje é mista, não 100% mock como o resto deste
+documento descreve: Autenticação, Lugares (criar, consultar, editar,
+excluir) e Salvos já falam de verdade com a API (`api/`), via
+`services/apiClient.js`/`services/auth.js`. Feed, Comunidades e Agenda
+continuam 100% sobre `services/mock/`. `services/index.js` decide, módulo a
+módulo, qual fonte usar — é o ponto único de mudança quando um módulo
+migrar, sem tocar `engine/` nem componentes.
 
-A arquitetura foi preparada para permitir a substituição gradual dessas implementações sem necessidade de alterações significativas nas demais camadas.
+O frontend também é uma PWA instalável desde 12/nov (manifest, service
+worker, tutorial de instalação — ver `docs/EMENDA-005-PWA-E-BETA-PUBLICADO.md`).
+
+Mapa com projeção própria e clima simulado continuam como estavam.
 
 ---
 
