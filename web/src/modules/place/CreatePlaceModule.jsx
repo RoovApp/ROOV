@@ -1,20 +1,23 @@
 /**
- * Cadastrar lugar — ROOV Product, Cap. 22, passo 5 do corte do mês.
+ * Cadastrar / editar lugar — ROOV Product, Cap. 22, passo 5 do corte do mês.
  *
- * Cria um lugar real direto na `api/` (sem rascunho local): o formulário
- * cobre os campos obrigatórios do `CreatePlaceDto` mais uma curadoria
- * opcional de `seedTags` (ponte temporária até Posts existir, ver
- * `docs/EMENDA-004-SEED-TAGS-NO-PLACE.md`). Sem ela, o lugar entra sem DNA
- * algum, só visível no Mapa, nunca ranqueado no Explorar.
+ * Mesmo formulário serve pros dois modos: sem `:id` na rota, cria um lugar
+ * real direto na `api/`; com `:id`, pré-preenche a partir do lugar existente
+ * e envia um PATCH. Cobre os campos obrigatórios do `CreatePlaceDto`/
+ * `UpdatePlaceDto` mais uma curadoria opcional de `seedTags` (ponte
+ * temporária até Posts existir, ver `docs/EMENDA-004-SEED-TAGS-NO-PLACE.md`).
+ * Sem ela, o lugar entra sem DNA algum, só visível no Mapa, nunca ranqueado
+ * no Explorar.
  */
 
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { LocateFixed } from 'lucide-react';
 import { DetailHeader } from '../../components/AppShell.jsx';
 import { Chip, PrimaryButton } from '../../components/ui/primitives.jsx';
 import { CATEGORIES, PLACE_TYPES, PRICE_RANGES, TAG_GROUPS } from '../../domain/taxonomy.js';
 import { useRoov } from '../../state/RoovProvider.jsx';
+import { placesService } from '../../services/index.js';
 
 const fieldClass =
   'w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm outline-none placeholder:text-[var(--muted-foreground)] focus:border-white/30';
@@ -28,7 +31,9 @@ const PLACE_DNA_GROUPS = TAG_GROUPS.filter((g) =>
 
 export function CreatePlaceModule() {
   const navigate = useNavigate();
-  const { user, actions } = useRoov();
+  const { id } = useParams();
+  const isEditing = Boolean(id);
+  const { user, placeById, actions } = useRoov();
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState(null);
@@ -46,7 +51,45 @@ export function CreatePlaceModule() {
   const [seedTags, setSeedTags] = useState({ ambiente: [], vibe: [], publico: [], perfil: [] });
   const [locating, setLocating] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [loadingPlace, setLoadingPlace] = useState(isEditing);
   const [error, setError] = useState(null);
+
+  /** Modo edição: pré-preenche com o lugar existente (local primeiro, API depois). */
+  useEffect(() => {
+    if (!isEditing) return undefined;
+    let cancelled = false;
+
+    function fill(place) {
+      if (!place || cancelled) return;
+      setName(place.name);
+      setCategory(place.category);
+      setPlaceType(place.placeType);
+      setNeighborhood(place.neighborhood);
+      setCity(place.city);
+      setState(place.state);
+      setCountry(place.country);
+      setLatitude(String(place.coords.lat));
+      setLongitude(String(place.coords.lng));
+      setPriceRange(place.priceRange);
+      setOpen(place.hours.open);
+      setClose(place.hours.close);
+      setClosedOn(place.hours.closedOn ?? []);
+      setSeedTags({
+        ambiente: place.seedTags?.ambiente ?? [],
+        vibe: place.seedTags?.vibe ?? [],
+        publico: place.seedTags?.publico ?? [],
+        perfil: place.seedTags?.perfil ?? [],
+      });
+      setLoadingPlace(false);
+    }
+
+    fill(placeById[id]);
+    placesService.byId(id).then(fill);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, isEditing]);
 
   const canSubmit =
     name.trim().length >= 2 &&
@@ -61,7 +104,8 @@ export function CreatePlaceModule() {
     priceRange &&
     open &&
     close &&
-    !saving;
+    !saving &&
+    !loadingPlace;
 
   function toggleDay(index) {
     setClosedOn((current) =>
@@ -98,7 +142,7 @@ export function CreatePlaceModule() {
     setError(null);
     try {
       const hasSeedTags = Object.values(seedTags).some((group) => group.length > 0);
-      const place = await actions.createPlace({
+      const payload = {
         name: name.trim(),
         category,
         placeType: placeType.trim(),
@@ -111,17 +155,22 @@ export function CreatePlaceModule() {
         priceRange,
         hours: { open, close, ...(closedOn.length ? { closedOn } : {}) },
         ...(hasSeedTags ? { seedTags } : {}),
-      });
+      };
+      const place = isEditing
+        ? await actions.updatePlace(id, payload)
+        : await actions.createPlace(payload);
       navigate(`/lugar/${place.id}`, { replace: true });
     } catch (e) {
-      setError(e.message ?? 'Não foi possível cadastrar. Tente de novo.');
+      setError(
+        e.message ?? `Não foi possível ${isEditing ? 'salvar' : 'cadastrar'}. Tente de novo.`,
+      );
       setSaving(false);
     }
   }
 
   return (
     <div className="flex h-full flex-col">
-      <DetailHeader title="Cadastrar lugar" />
+      <DetailHeader title={isEditing ? 'Editar lugar' : 'Cadastrar lugar'} />
 
       <div className="scrollbar-hide flex-1 overflow-y-auto px-4 pb-4 pt-4">
         <div className="space-y-5">
@@ -332,7 +381,13 @@ export function CreatePlaceModule() {
           ))}
 
           <PrimaryButton onClick={handleSubmit} disabled={!canSubmit}>
-            {saving ? 'Cadastrando…' : 'Cadastrar lugar'}
+            {saving
+              ? isEditing
+                ? 'Salvando…'
+                : 'Cadastrando…'
+              : isEditing
+                ? 'Salvar alterações'
+                : 'Cadastrar lugar'}
           </PrimaryButton>
         </div>
       </div>

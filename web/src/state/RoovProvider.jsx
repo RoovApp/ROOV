@@ -164,6 +164,15 @@ function reducer(state, action) {
     case 'addPlace':
       return { ...state, places: [...state.places, action.place] };
 
+    case 'updatePlace':
+      return {
+        ...state,
+        places: state.places.map((p) => (p.id === action.place.id ? action.place : p)),
+      };
+
+    case 'removePlace':
+      return { ...state, places: state.places.filter((p) => p.id !== action.placeId) };
+
     case 'toast':
       return { ...state, toast: action.toast };
 
@@ -366,6 +375,21 @@ export function RoovProvider({ children, authUser }) {
         dispatch({ type: 'addPlace', place });
         toast(`${place.name} cadastrado`);
         return place;
+      },
+
+      /** Edição de lugar real — só quem cadastrou, garantido pela `api/`. */
+      updatePlace: async (id, input) => {
+        const place = await placesService.update(id, input);
+        dispatch({ type: 'updatePlace', place });
+        toast(`${place.name} atualizado`);
+        return place;
+      },
+
+      /** Exclusão de lugar real — só quem cadastrou, garantido pela `api/`. */
+      removePlace: async (id) => {
+        await placesService.remove(id);
+        dispatch({ type: 'removePlace', placeId: id });
+        toast('Lugar excluído');
       },
 
       toast,

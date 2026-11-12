@@ -87,6 +87,7 @@ function mapApiPlace(place) {
     priceRange: place.priceRange,
     hours: place.hours,
     status: place.status,
+    createdById: place.createdById,
     createdAt: place.createdAt,
     seedTags: place.seedTags ?? undefined,
   };
@@ -216,6 +217,46 @@ export const placesService = {
     db.placeById[place.id] = place;
 
     return place;
+  },
+  /** Edita um lugar real. Só o próprio backend garante que é quem cadastrou. */
+  async update(id, input) {
+    const session = loadSession();
+    if (!session) throw new Error('Você precisa estar logado para editar um lugar.');
+
+    const updated = await apiRequest(`/places/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: input,
+      accessToken: session.accessToken,
+    });
+
+    const raw = mapApiPlace(updated);
+    const { seedTags, ...rest } = raw;
+    const db = await getDb();
+    const previous = db.placeById[id];
+    const place = {
+      ...rest,
+      dna: consolidateDna(raw, db.postsByPlace[id] ?? []),
+      postsCount: previous?.postsCount ?? 0,
+    };
+
+    db.places = db.places.map((p) => (p.id === id ? place : p));
+    db.placeById[id] = place;
+
+    return place;
+  },
+  /** Exclui um lugar real. Só o próprio backend garante que é quem cadastrou. */
+  async remove(id) {
+    const session = loadSession();
+    if (!session) throw new Error('Você precisa estar logado para excluir um lugar.');
+
+    await apiRequest(`/places/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+      accessToken: session.accessToken,
+    });
+
+    const db = await getDb();
+    db.places = db.places.filter((p) => p.id !== id);
+    delete db.placeById[id];
   },
   /** Lugares com DNA parecido — usado no "experiências similares" do detalhe. */
   async similarTo(id, limit = 4) {

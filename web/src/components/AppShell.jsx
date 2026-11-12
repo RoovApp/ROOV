@@ -21,7 +21,7 @@ const TABS = [
 ];
 
 /** Rotas onde a barra inferior não aparece. */
-const FULLSCREEN_PREFIXES = ['/lugar/', '/comunidade/', '/buscar', '/criar', '/lugares/novo'];
+const FULLSCREEN_PREFIXES = ['/lugar/', '/comunidade/', '/buscar', '/criar', '/lugares/'];
 
 export function AppShell({ children }) {
   const { pathname } = useLocation();

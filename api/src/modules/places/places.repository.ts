@@ -77,6 +77,10 @@ export class PlacesRepository {
     return this.prisma.place.update({ where: { id }, data });
   }
 
+  remove(id: string): Promise<Place> {
+    return this.prisma.place.delete({ where: { id } });
+  }
+
   /**
    * Paginação por cursor (`createdAt`, `id`) — ordenação decrescente com
    * `id` como desempate para estabilidade quando dois registros têm o mesmo

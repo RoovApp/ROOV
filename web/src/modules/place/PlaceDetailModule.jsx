@@ -7,8 +7,8 @@
  */
 
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { Clock, Share2 } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Clock, Pencil, Share2, Trash2 } from 'lucide-react';
 import { DetailHeader } from '../../components/AppShell.jsx';
 import { PlaceCard } from '../../components/PlaceCard.jsx';
 import { DnaPanel } from '../../components/DnaStrip.jsx';
@@ -18,16 +18,20 @@ import { placesService, postsService } from '../../services/index.js';
 import { experienceTitle } from '../../engine/recommendation.js';
 import { isOpenAt } from '../../engine/moment.js';
 import { useRoov } from '../../state/RoovProvider.jsx';
+import { useAuth } from '../../state/AuthProvider.jsx';
 
 const WEEKDAYS = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
 export function PlaceDetailModule() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { placeById, moment, actions } = useRoov();
+  const { user: authUser } = useAuth();
   const [place, setPlace] = useState(placeById[id] ?? null);
   const [posts, setPosts] = useState(null);
   const [similar, setSimilar] = useState([]);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     setPlace(placeById[id] ?? null);
@@ -59,20 +63,55 @@ export function PlaceDetailModule() {
   }
 
   const open = isOpenAt(place.hours, moment.hour, moment.weekday);
+  const isOwner = Boolean(authUser && place.createdById && place.createdById === authUser.id);
+
+  async function handleDelete() {
+    if (!window.confirm(`Excluir "${place.name}"? Essa ação não pode ser desfeita.`)) return;
+    setDeleting(true);
+    try {
+      await actions.removePlace(place.id);
+      navigate('/', { replace: true });
+    } catch (e) {
+      actions.toast(e.message ?? 'Não foi possível excluir. Tente de novo.');
+      setDeleting(false);
+    }
+  }
 
   return (
     <div className="scrollbar-hide h-full overflow-y-auto pb-10">
       <DetailHeader
         title={place.name}
         right={
-          <button
-            type="button"
-            aria-label="Compartilhar"
-            onClick={() => actions.toast('Link do lugar copiado')}
-            className="glass flex h-9 w-9 items-center justify-center rounded-full"
-          >
-            <Share2 className="h-4 w-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {isOwner && (
+              <>
+                <Link
+                  to={`/lugares/${place.id}/editar`}
+                  aria-label="Editar lugar"
+                  className="glass flex h-9 w-9 items-center justify-center rounded-full"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Link>
+                <button
+                  type="button"
+                  aria-label="Excluir lugar"
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="glass flex h-9 w-9 items-center justify-center rounded-full text-[#FF0F7B] disabled:opacity-40"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              aria-label="Compartilhar"
+              onClick={() => actions.toast('Link do lugar copiado')}
+              className="glass flex h-9 w-9 items-center justify-center rounded-full"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
+          </div>
         }
       />
 

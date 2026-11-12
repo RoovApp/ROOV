@@ -148,6 +148,19 @@ export class PlacesService {
     return toPublicPlace(updated);
   }
 
+  /** Só quem cadastrou pode excluir — mesma regra simples do `update`. */
+  async remove(userId: string, id: string): Promise<void> {
+    const existing = await this.places.findById(id);
+    if (!existing) {
+      throw AppException.notFound('Lugar não encontrado.');
+    }
+    if (existing.createdById !== userId) {
+      throw AppException.forbidden('Só quem cadastrou este lugar pode excluí-lo.');
+    }
+
+    await this.places.remove(id);
+  }
+
   async list(query: ListPlacesQueryDto): Promise<PlacesPage> {
     const limit = query.limit ?? 20;
     const cursor = query.cursor ? decodeCursor(query.cursor) : undefined;

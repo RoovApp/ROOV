@@ -1,4 +1,15 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { PlacesService, type PlacesPage, type PublicPlace } from './places.service';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../../common/types/authenticated-user';
@@ -40,5 +51,12 @@ export class PlacesController {
     @Body() dto: UpdatePlaceDto,
   ): Promise<PublicPlace> {
     return this.places.update(user.id, id, dto);
+  }
+
+  /** DELETE /v1/places/:id — só quem cadastrou pode excluir. */
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Delete(':id')
+  remove(@CurrentUser() user: AuthenticatedUser, @Param('id') id: string): Promise<void> {
+    return this.places.remove(user.id, id);
   }
 }

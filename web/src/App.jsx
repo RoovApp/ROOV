@@ -14,6 +14,8 @@ import { AppShell } from './components/AppShell.jsx';
 import { SplashScreen } from './modules/onboarding/SplashScreen.jsx';
 import { AuthModule } from './modules/onboarding/AuthModule.jsx';
 import { VerifyEmailModule } from './modules/onboarding/VerifyEmailModule.jsx';
+import { InstallAppModule } from './modules/onboarding/InstallAppModule.jsx';
+import { isStandalone } from './services/installPrompt.js';
 import { DiscoveryModule } from './modules/discovery/DiscoveryModule.jsx';
 import { CommunitiesModule } from './modules/communities/CommunitiesModule.jsx';
 import { CommunityDetailModule } from './modules/communities/CommunityDetailModule.jsx';
@@ -47,8 +49,17 @@ export default function App() {
  * que existe uma sessão. A identidade real (`user`) é passada adiante para
  * o `RoovProvider` mesclar com o "perfil" mock — ver `RoovProvider.jsx`.
  */
+const INSTALL_TUTORIAL_KEY = 'roov:install-tutorial-seen';
+
 function AuthGate() {
   const { status, user } = useAuth();
+  const [installSeen, setInstallSeen] = useState(() => {
+    try {
+      return localStorage.getItem(INSTALL_TUTORIAL_KEY) === '1';
+    } catch {
+      return true;
+    }
+  });
 
   if (status === 'checking') {
     return <div className="mx-auto h-full w-full max-w-md bg-[var(--background)]" />;
@@ -75,6 +86,28 @@ function AuthGate() {
     );
   }
 
+  /**
+   * Tutorial de instalação: uma vez por navegador, logo após o primeiro
+   * login/verificação, antes do resto do app. `isStandalone()` pula direto
+   * quem já abriu pelo app instalado — não faz sentido ensinar de novo.
+   */
+  if (!installSeen && !isStandalone()) {
+    return (
+      <div className="mx-auto h-full w-full max-w-md">
+        <InstallAppModule
+          onComplete={() => {
+            try {
+              localStorage.setItem(INSTALL_TUTORIAL_KEY, '1');
+            } catch {
+              // armazenamento bloqueado (ex.: navegação privada) — segue sem persistir
+            }
+            setInstallSeen(true);
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <RoovProvider authUser={user}>
       <PlaceActionsProvider>
@@ -87,6 +120,7 @@ function AuthGate() {
             <Route path="/perfil" element={<ProfileModule />} />
             <Route path="/lugar/:id" element={<PlaceDetailModule />} />
             <Route path="/lugares/novo" element={<CreatePlaceModule />} />
+            <Route path="/lugares/:id/editar" element={<CreatePlaceModule />} />
             <Route path="/buscar" element={<SearchModule />} />
             <Route path="/criar" element={<CreateModule />} />
             <Route path="*" element={<Navigate to="/" replace />} />
