@@ -4,7 +4,7 @@
 **Status:** beta publicado, testável de fora pelo sócio. Rascunho pra validar
 o próximo corte entre os sócios.
 **Retomado em 12/nov/2026** (tinha pausado em 10/out). A integração com
-Google Maps (passo 10 da seção 3) continua bloqueada por falta da conta
+Google Maps (passo 11 da seção 3) continua bloqueada por falta da conta
 Google Cloud; o resto do corte não dependia dela e seguiu.
 
 Este documento tem 5 partes: o que entra no MVP, o que já está pronto, o que
@@ -145,7 +145,18 @@ Em ordem: cada passo depende do anterior.
    publicado como PWA, essa frente perdeu urgência pro teste imediato (dá
    pra testar em Android e iPhone instalando o site), mas segue valendo pra
    quando fizer sentido publicar nas lojas.
-10. **🔴 Bloqueado: integrar lugares do Google Maps.** Pedido em 10/out, fora
+10. **Verificar domínio próprio no Resend.** Hoje o e-mail de verificação
+    está configurado e funcionando (`RESEND_API_KEY` ativa no Render,
+    validado com status `Delivered`), mas só entrega pro e-mail da própria
+    conta Resend (`roovapp.dev@gmail.com`): o domínio de teste
+    (`onboarding@resend.dev`) recusa qualquer outro destinatário com `403`
+    ("Testing domain restriction"), confirmado testando na prática. Pra
+    qualquer usuário de fora conseguir se cadastrar recebendo o código de
+    verdade, falta: verificar um domínio próprio no painel do Resend
+    (`Domains`) e trocar `RESEND_FROM_EMAIL` pra usar esse domínio. Não
+    bloqueia teste interno (o código continua disponível pra copiar do log
+    do Render enquanto isso não for feito).
+11. **🔴 Bloqueado: integrar lugares do Google Maps.** Pedido em 10/out, fora
    do corte original: lugares passariam a vir do Google Places (nearby
    search, filtrado pro que faz sentido no ROOV) em vez de cadastro manual,
    que seria removido. O mapa principal passaria a ser um mapa de verdade
