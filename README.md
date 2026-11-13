@@ -51,7 +51,7 @@ Se o `@` da senha quebrar a leitura da connection string, troque por `%40`.
 
 | Camada | Serviço | Endereço |
 | --- | --- | --- |
-| Front (PWA) | Vercel (Hobby) | `https://roov-web-rouge.vercel.app` |
+| Front (PWA) | Vercel (Hobby) | `https://roov-web-rouge.vercel.app/admin/` (teste fechado: pede usuário e senha, ver `EMENDA-006`; a raiz mostra só "em breve") |
 | API | Render (Free) | `https://roov-api-ttm0.onrender.com` |
 | Banco | Supabase (Free, São Paulo) | painel do Supabase, projeto `roov` |
 
